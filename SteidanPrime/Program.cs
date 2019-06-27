@@ -1,20 +1,20 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Discord;
-using Discord.WebSocket;
+﻿using Discord;
 using Discord.Commands;
-
+using Discord.WebSocket;
 using Newtonsoft.Json;
+using System;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SteidanPrime
 {
     class Program
     {
-        private readonly DiscordSocketClient Client;
-        private readonly CommandService Commands;
+        private readonly DiscordSocketClient client;
+        private readonly CommandService commands;
+        public CommandHandler commandHandler;
+        public LoggingService loggingService;
         private Settings settings;
 
         static void Main(string[] args)
@@ -22,21 +22,20 @@ namespace SteidanPrime
 
         private Program()
         {
-            Client = new DiscordSocketClient(new DiscordSocketConfig
+            settings = new Settings();
+
+            client = new DiscordSocketClient(new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Info
+                LogLevel = LogSeverity.Debug,
             });
 
-            Commands = new CommandService(new CommandServiceConfig
+            commands = new CommandService(new CommandServiceConfig
             {
-                LogLevel = LogSeverity.Info,
-                CaseSensitiveCommands = false
+                LogLevel = LogSeverity.Debug,
+                CaseSensitiveCommands = false              
             });
 
-            Client.Log += Log;
-            Commands.Log += Log;
-
-            Settings settings = new Settings();
+            client.Ready += clientReady;        
 
             try
             {
@@ -49,50 +48,56 @@ namespace SteidanPrime
                 settings.Token = Console.ReadLine();
 
                 Console.WriteLine("Please choose your bot prefix: ");
-                settings.Prefix = Console.ReadLine();
+                settings.CommandPrefix = Console.ReadLine();
 
-                string json = JsonConvert.SerializeObject(settings);
+                string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 System.IO.File.WriteAllText("config.json", json);
             }
         }
 
+        private async Task clientReady()
+        {
+            await client.SetGameAsync("Hello there");
+        }
+
         public async Task MainAsync()
         {
-            settings.Token = JsonConvert.DeserializeObject<Settings>(File.ReadAllText("config.json")).Token;
-            await Client.LoginAsync(TokenType.Bot, settings.Token);
+            settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText("config.json"));
 
-            //var token = "NTkyODE2NjU0NDg5MDkyMTIy.XRE1pA.CDZrfEeuauTXStfVEPUS1_7GPaE";
-            //JsonConvert.DeserializeObject<Settings>(File.ReadAllText("config.json")).Token;
+            commandHandler = new CommandHandler(client, commands, settings.CommandPrefix);
+            await commandHandler.InstallCommandsAsync();
 
-            await Client.StartAsync();
+            loggingService = new LoggingService(client, commands);
 
-            //await Task.Delay(-1);
-            await Task.Delay(Timeout.Infinite);
-        }
+            await client.LoginAsync(TokenType.Bot, settings.Token);
+            await client.StartAsync();
 
-        private Task Log(LogMessage message)
-        {
-            switch (message.Severity)
+            bool stopBot = false;
+
+            while (!stopBot)
             {
-                case LogSeverity.Critical:
-                case LogSeverity.Error:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
-                case LogSeverity.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
-                case LogSeverity.Info:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
-                case LogSeverity.Verbose:
-                case LogSeverity.Debug:
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    break;
-            }
+                var consoleInput = (await GetInputAsync()).ToLower();
 
-            Console.WriteLine($"{DateTime.Now,-19} [{message.Severity}] {message.Source}: {message.Message} {message.Exception}");
-            Console.ResetColor();
-            return Task.CompletedTask;
+                switch (consoleInput)
+                {
+                    case "stop":
+                        stopBot = true;
+                        break;
+
+                    case "hello there":
+                        Console.WriteLine("General Kenobi");
+                        break;
+
+                    default:
+                        Console.WriteLine("Command not recognized.");
+                        break;
+                }
+            }
         }
+
+        private async Task<string> GetInputAsync()
+        {
+            return await Task.Run(() => Console.ReadLine());
+        }      
     }
 }

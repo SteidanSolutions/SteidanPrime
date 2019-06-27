@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Newtonsoft.Json;
 
 namespace SteidanPrime
 {
     public class Settings
     {
+        [JsonProperty("token")]
         public string Token { get; set; }
-        public string Prefix { get; set; }
+        
+        [JsonProperty("prefix")]
+        public string CommandPrefix { get; set; }
         public string Owner { get; set; }
         public bool AutoReconnect { get; set; }
 
