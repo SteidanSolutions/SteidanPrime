@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SteidanPrime
 {
-    class CommandHandler
+    public class CommandHandler
     {
         private readonly DiscordSocketClient client;
         private readonly CommandService commands;
@@ -46,8 +46,8 @@ namespace SteidanPrime
             int argPos = 0;
 
             // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if(!message.HasStringPrefix(prefix, ref argPos) ||
-               !message.HasMentionPrefix(client.CurrentUser, ref argPos) ||
+            if(!(message.HasStringPrefix(prefix, ref argPos) ||
+                message.HasMentionPrefix(client.CurrentUser, ref argPos)) ||
                 message.Author.IsBot)
                 return;
             
