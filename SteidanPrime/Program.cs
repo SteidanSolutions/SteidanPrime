@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace SteidanPrime
         public CommandHandler commandHandler;
         public LoggingService loggingService;
         private Settings settings;
+        public static Dictionary<string, List<string>> MarkovDict { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -71,6 +73,8 @@ namespace SteidanPrime
 
             await client.LoginAsync(TokenType.Bot, settings.Token);
             await client.StartAsync();
+
+            MarkovDict = new Dictionary<string, List<string>>();
 
             bool stopBot = false;
 
