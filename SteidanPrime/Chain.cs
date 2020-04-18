@@ -1,4 +1,5 @@
 ﻿using Discord.Commands;
+using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,33 +12,14 @@ namespace SteidanPrime
         [Command("chain")]
         public async Task PrintChain()
         {
-            if (Program.MarkovDict.Keys.Count == 0)
+            if (Program.markov.MarkovDict.Keys.Count == 0)
             {
                 await Context.Channel.SendMessageAsync("Type something first you cunt.");
                 return;
             }
 
-            var rand = new Random();
-            List<string> keys = new List<string>(Program.MarkovDict.Keys);
-
-            string currentPair = keys[rand.Next(keys.Count)];
-            string message = currentPair;
-
-            for (int i = 0; i < 15; i++)
-            {
-                while (!Program.MarkovDict.ContainsKey(currentPair))
-                    currentPair = keys[rand.Next(keys.Count)];
-
-                List<string> words = Program.MarkovDict[currentPair];
-
-                string nextWord = words[rand.Next(words.Count)];
-                message += " " + nextWord;
-
-                string[] pairSplit = currentPair.Split(' ');
-                currentPair = pairSplit[1] + " " + nextWord;
-            }
-
-            Program.MarkovDict.Clear();
+            SocketGuild guild = Context.Guild;
+            string message = Program.markov.GetChain(guild);
             await Context.Channel.SendMessageAsync(message);
         }
     }

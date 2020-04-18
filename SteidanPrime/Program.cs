@@ -17,7 +17,7 @@ namespace SteidanPrime
         public CommandHandler commandHandler;
         public LoggingService loggingService;
         private Settings settings;
-        public static Dictionary<string, List<string>> MarkovDict { get; set; }
+        public static Markov markov { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -74,7 +74,7 @@ namespace SteidanPrime
             await client.LoginAsync(TokenType.Bot, settings.Token);
             await client.StartAsync();
 
-            MarkovDict = new Dictionary<string, List<string>>();
+            markov = new Markov(client, "markovDict.json");
 
             bool stopBot = false;
 
@@ -85,6 +85,7 @@ namespace SteidanPrime
                 switch (consoleInput)
                 {
                     case "stop":
+                        markov.SerializeDict("markovDict.json");
                         stopBot = true;
                         break;
 

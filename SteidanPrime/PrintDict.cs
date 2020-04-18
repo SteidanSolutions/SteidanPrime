@@ -13,7 +13,7 @@ namespace SteidanPrime
         {
             string str = "";
 
-            foreach (KeyValuePair<string, List<string>> entry in Program.MarkovDict)
+            foreach (KeyValuePair<string, List<string>> entry in Program.markov.MarkovDict)
             {
                 if (entry.Value.Count > 0)
                 {

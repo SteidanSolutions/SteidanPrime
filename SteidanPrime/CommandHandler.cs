@@ -53,12 +53,12 @@ namespace SteidanPrime
                 return;
 
             // If it's not a command, parse the message for Markov chains
-            if (!(message.HasCharPrefix('!', ref argPos) ||
+            if (!(message.HasStringPrefix(prefix, ref argPos) ||
                 message.HasMentionPrefix(client.CurrentUser, ref argPos)))
             {
                 string msg = message.ToString().Trim().ToLower();
 
-                Regex reg = new Regex("[*\",_&#^@?!*-+\\.]+");
+                Regex reg = new Regex("[*\",_&#^@?!*\\-+\\.]+");
                 msg = reg.Replace(msg, " ");
 
                 msg = Regex.Replace(msg, @"\s+", " ");
@@ -70,15 +70,15 @@ namespace SteidanPrime
                     string key = words[i] + ' ' + words[i + 1];
 
                     List<string> value = new List<string>();
-                    if (Program.MarkovDict.TryGetValue(key, out value))
+                    if (Program.markov.MarkovDict.TryGetValue(key, out value))
                     {
-                        Program.MarkovDict[key].Add(words[i + 2]);
+                        Program.markov.MarkovDict[key].Add(words[i + 2]);
                     }
                     else
                     {
                         List<string> v = new List<string>();
                         v.Add(words[i + 2]);
-                        Program.MarkovDict[key] = v;
+                        Program.markov.MarkovDict[key] = v;
                     }
                 }
 
