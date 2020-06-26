@@ -12,32 +12,34 @@ namespace SteidanPrime
     class Markov
     {
         private readonly DiscordSocketClient client;
-        public Dictionary<string, List<string>> MarkovDict { get; set; }
+        public Dictionary<ulong ,Dictionary<string, List<string>>> MarkovDict { get; set; }
 
-        public Markov(DiscordSocketClient client, string path)
+        public Markov(DiscordSocketClient client)
         {
+            MarkovDict = new Dictionary<ulong, Dictionary<string, List<string>>>();
             this.client = client;
-            DeserializeDict(path);
+            DeserializeDict();
         }
 
         public string GetChain(SocketGuild guild)
         {
             var rand = new Random();
-            List<string> keys = new List<string>(MarkovDict.Keys);
+            Dictionary<string, List<string>> GuildDict = MarkovDict[guild.Id];
+            List<string> keys = new List<string>(GuildDict.Keys);
 
             string currentPair = keys[rand.Next(keys.Count)];
             string message = currentPair;
 
-            while (!MarkovDict.ContainsKey(currentPair))
+            while (!GuildDict.ContainsKey(currentPair))
                 currentPair = keys[rand.Next(keys.Count)];
 
             for (int i = 0; i < 15; i++)
             {
 
-                if (!MarkovDict.ContainsKey(currentPair))
+                if (!GuildDict.ContainsKey(currentPair))
                     break;
 
-                List<string> words = MarkovDict[currentPair];
+                List<string> words = GuildDict[currentPair];
 
                 string nextWord = words[rand.Next(words.Count)];
 
@@ -51,18 +53,24 @@ namespace SteidanPrime
             return message;
         }
 
-        public void SerializeDict(string path)
+        public void SerializeDict()
         {
-            string markovJson = JsonConvert.SerializeObject(MarkovDict, Formatting.Indented);
-            System.IO.File.WriteAllText("markovDict.json", markovJson);
+            foreach (var Guild in client.Guilds)
+            {
+                string markovJson = JsonConvert.SerializeObject(MarkovDict[Guild.Id], Formatting.Indented);
+                System.IO.File.WriteAllText(Guild.Id.ToString() + ".json", markovJson);
+            }
         }
 
-        public void DeserializeDict(string path)
+        public void DeserializeDict()
         {
-            if (File.Exists(path))
-                MarkovDict = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText("markovDict.json"));
-            else
-                MarkovDict = new Dictionary<string, List<string>>();
+            foreach (var Guild in client.Guilds)
+            {
+                if (File.Exists(Guild.Id.ToString() + ".json"))
+                    MarkovDict[Guild.Id] = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText(Guild.Id.ToString() + ".json"));
+                else
+                    MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
+            }
         }
     }
 }

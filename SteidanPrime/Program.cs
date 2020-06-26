@@ -37,7 +37,8 @@ namespace SteidanPrime
                 CaseSensitiveCommands = false              
             });
 
-            client.Ready += clientReady;        
+            client.Ready += clientReady;
+            client.JoinedGuild += joinedGuild;
 
             try
             {
@@ -60,6 +61,17 @@ namespace SteidanPrime
         private async Task clientReady()
         {
             await client.SetGameAsync("Hello there");
+            markov = new Markov(client);
+            foreach (var Guild in client.Guilds)
+            {
+                Console.WriteLine(Guild.Id.ToString());
+            }
+        }
+
+        private async Task joinedGuild(SocketGuild Guild)
+        {
+            if (!markov.MarkovDict.ContainsKey(Guild.Id))
+                markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
         }
 
         public async Task MainAsync()
@@ -74,8 +86,6 @@ namespace SteidanPrime
             await client.LoginAsync(TokenType.Bot, settings.Token);
             await client.StartAsync();
 
-            markov = new Markov(client, "markovDict.json");
-
             bool stopBot = false;
 
             while (!stopBot)
@@ -85,7 +95,7 @@ namespace SteidanPrime
                 switch (consoleInput)
                 {
                     case "stop":
-                        markov.SerializeDict("markovDict.json");
+                        markov.SerializeDict();
                         stopBot = true;
                         break;
 

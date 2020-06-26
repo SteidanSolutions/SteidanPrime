@@ -45,6 +45,10 @@ namespace SteidanPrime
             var message = messageParam as SocketUserMessage;
             if (message == null) return;
 
+            // Used to get the guild in which the message was sent
+            var channel = message.Channel as SocketGuildChannel;
+            var guild = channel.Guild;
+
             // Create a number to track where the prefix ends and the command begins
             int argPos = 0;
 
@@ -64,21 +68,22 @@ namespace SteidanPrime
                 msg = Regex.Replace(msg, @"\s+", " ");
                 string[] words = msg.Split(' ');
 
+                foreach (var line in words)
+                    Console.WriteLine(line);
 
                 for (int i = 0; i < words.Length - 2; i++)
                 {
                     string key = words[i] + ' ' + words[i + 1];
 
-                    List<string> value = new List<string>();
-                    if (Program.markov.MarkovDict.TryGetValue(key, out value))
+                    if (Program.markov.MarkovDict[guild.Id].ContainsKey(key))
                     {
-                        Program.markov.MarkovDict[key].Add(words[i + 2]);
+                        //Program.markov.MarkovDict[guild.Id][key].Add(words[i + 2]);
                     }
                     else
                     {
                         List<string> v = new List<string>();
                         v.Add(words[i + 2]);
-                        Program.markov.MarkovDict[key] = v;
+                        Program.markov.MarkovDict[guild.Id][key] = v;
                     }
                 }
 
