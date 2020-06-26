@@ -68,16 +68,13 @@ namespace SteidanPrime
                 msg = Regex.Replace(msg, @"\s+", " ");
                 string[] words = msg.Split(' ');
 
-                foreach (var line in words)
-                    Console.WriteLine(line);
-
                 for (int i = 0; i < words.Length - 2; i++)
                 {
                     string key = words[i] + ' ' + words[i + 1];
 
                     if (Program.markov.MarkovDict[guild.Id].ContainsKey(key))
                     {
-                        //Program.markov.MarkovDict[guild.Id][key].Add(words[i + 2]);
+                        Program.markov.MarkovDict[guild.Id][key].Add(words[i + 2]);
                     }
                     else
                     {

@@ -62,10 +62,6 @@ namespace SteidanPrime
         {
             await client.SetGameAsync("Hello there");
             markov = new Markov(client);
-            foreach (var Guild in client.Guilds)
-            {
-                Console.WriteLine(Guild.Id.ToString());
-            }
         }
 
         private async Task joinedGuild(SocketGuild Guild)
