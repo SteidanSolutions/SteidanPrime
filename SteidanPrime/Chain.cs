@@ -12,7 +12,7 @@ namespace SteidanPrime
         [Command("chain")]
         public async Task PrintChain()
         {
-            if (Program.markov.MarkovDict.Keys.Count == 0)
+            if (Program.markov.MarkovDict[Context.Guild.Id].Keys.Count == 0)
             {
                 await Context.Channel.SendMessageAsync("Type something first you cunt.");
                 return;

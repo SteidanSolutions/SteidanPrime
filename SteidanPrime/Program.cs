@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace SteidanPrime
 {
@@ -37,14 +38,10 @@ namespace SteidanPrime
                 CaseSensitiveCommands = false              
             });
 
-            client.Ready += clientReady;
-            client.JoinedGuild += joinedGuild;
+            client.Ready += ClientReady;
+            client.JoinedGuild += JoinedGuild;
 
-            try
-            {
-                StreamReader sr = new StreamReader("config.json");
-            }
-            catch
+            if (!File.Exists("Resources/config.json"))
             {
                 Console.WriteLine("Config file not found. Initializing bot settings.");
                 Console.WriteLine("Please input your bot token: ");
@@ -54,17 +51,23 @@ namespace SteidanPrime
                 settings.CommandPrefix = Console.ReadLine();
 
                 string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-                System.IO.File.WriteAllText("config.json", json);
+                System.IO.File.WriteAllText("Resources/config.json", json);
             }
         }
 
-        private async Task clientReady()
+        private async Task ClientReady()
         {
             await client.SetGameAsync("Hello there");
             markov = new Markov(client);
         }
 
-        private async Task joinedGuild(SocketGuild Guild)
+        private static void AutoSave(object source, ElapsedEventArgs e)
+        {
+            markov.SerializeDict();
+            Console.WriteLine("Dictionaries auto-saved.");
+        }
+
+        private async Task JoinedGuild(SocketGuild Guild)
         {
             if (!markov.MarkovDict.ContainsKey(Guild.Id))
                 markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
@@ -72,7 +75,7 @@ namespace SteidanPrime
 
         public async Task MainAsync()
         {
-            settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText("config.json"));
+            settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText("Resources/config.json"));
 
             commandHandler = new CommandHandler(client, commands, settings.CommandPrefix);
             await commandHandler.InstallCommandsAsync();
@@ -82,6 +85,15 @@ namespace SteidanPrime
             await client.LoginAsync(TokenType.Bot, settings.Token);
             await client.StartAsync();
 
+            // Initialize auto-save timer
+            Timer timer = new Timer
+            {
+                Interval = 10 * 60 * 1000,
+                AutoReset = true    
+            };
+
+            timer.Elapsed += AutoSave;
+            timer.Enabled = true;
 
             bool stopBot = false;
 

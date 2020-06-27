@@ -58,7 +58,7 @@ namespace SteidanPrime
             foreach (var Guild in client.Guilds)
             {
                 string markovJson = JsonConvert.SerializeObject(MarkovDict[Guild.Id], Formatting.Indented);
-                System.IO.File.WriteAllText(Guild.Id.ToString() + ".json", markovJson);
+                System.IO.File.WriteAllText("Resources/Dictionaries/" + Guild.Id.ToString() + ".json", markovJson);
             }
         }
 
@@ -66,8 +66,8 @@ namespace SteidanPrime
         {
             foreach (var Guild in client.Guilds)
             {
-                if (File.Exists(Guild.Id.ToString() + ".json"))
-                    MarkovDict[Guild.Id] = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText(Guild.Id.ToString() + ".json"));
+                if (File.Exists("Resources/Dictionaries/" + Guild.Id.ToString() + ".json"))
+                    MarkovDict[Guild.Id] = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText("Resources/Dictionaries/" + Guild.Id.ToString() + ".json"));
                 else
                     MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
             }
