@@ -2,6 +2,8 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using SteidanPrime.MarkovChain;
+using SteidanPrime.Sokoban;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,8 +19,9 @@ namespace SteidanPrime
         private readonly CommandService commands;
         public CommandHandler commandHandler;
         public LoggingService loggingService;
-        private Settings settings;
+        public static Settings settings { get; set; }
         public static Markov markov { get; set; }
+        public static Sokoban.Game Sokoban { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -59,6 +62,7 @@ namespace SteidanPrime
         {
             await client.SetGameAsync("Hello there");
             markov = new Markov(client);
+            Sokoban = new Sokoban.Game();
         }
 
         private static void AutoSave(object source, ElapsedEventArgs e)

@@ -7,12 +7,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace SteidanPrime
+namespace SteidanPrime.MarkovChain
 {
     class Markov
     {
         private readonly DiscordSocketClient client;
-        public Dictionary<ulong ,Dictionary<string, List<string>>> MarkovDict { get; set; }
+        public Dictionary<ulong, Dictionary<string, List<string>>> MarkovDict { get; set; }
 
         public Markov(DiscordSocketClient client)
         {
@@ -58,7 +58,7 @@ namespace SteidanPrime
             foreach (var Guild in client.Guilds)
             {
                 string markovJson = JsonConvert.SerializeObject(MarkovDict[Guild.Id], Formatting.Indented);
-                System.IO.File.WriteAllText("Resources/Dictionaries/" + Guild.Id.ToString() + ".json", markovJson);
+                File.WriteAllText("Resources/Dictionaries/" + Guild.Id.ToString() + ".json", markovJson);
             }
         }
 

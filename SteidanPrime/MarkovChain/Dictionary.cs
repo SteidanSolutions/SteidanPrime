@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SteidanPrime
+namespace SteidanPrime.MarkovChain
 {
     [Group("dictionary")]
     [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]

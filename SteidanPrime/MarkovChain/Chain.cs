@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SteidanPrime
+namespace SteidanPrime.MarkovChain
 {
     public class Chain : ModuleBase<SocketCommandContext>
     {

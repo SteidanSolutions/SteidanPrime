@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
@@ -56,6 +57,46 @@ namespace SteidanPrime
             if (message.Author.IsBot)
                 return;
 
+            if (Program.Sokoban.GameActive)
+            {
+                String msg = message.Content;
+                Sokoban.Game Game = Program.Sokoban;
+
+                Boolean Moved = true;
+
+                switch(msg.Trim().ToLower())
+                {
+                    case "w":
+                        Game.MovePlayer(Sokoban.Movement.UP);
+                        break;
+
+                    case "d":
+                        Game.MovePlayer(Sokoban.Movement.RIGHT);
+                        break;
+
+                    case "s":
+                        Game.MovePlayer(Sokoban.Movement.DOWN);
+                        break;
+
+                    case "a":
+                        Game.MovePlayer(Sokoban.Movement.LEFT);
+                        break;
+
+                    case "r":
+                        Game.MovePlayer(Sokoban.Movement.RESET);
+                        break;
+                    default:
+                        Moved = false;
+                        break;
+                }
+
+                if (Moved)
+                {
+                    await message.DeleteAsync();
+                    return;
+                }
+            }
+
             // If it's not a command, parse the message for Markov chains
             if (!(message.HasStringPrefix(prefix, ref argPos) ||
                 message.HasMentionPrefix(client.CurrentUser, ref argPos)))
@@ -86,8 +127,6 @@ namespace SteidanPrime
 
                 return;
             }
-
-
 
             // Create a WebSocket-based command context based on the message
             var context = new SocketCommandContext(client, message);
