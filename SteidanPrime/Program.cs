@@ -82,6 +82,7 @@ namespace SteidanPrime
             await client.LoginAsync(TokenType.Bot, settings.Token);
             await client.StartAsync();
 
+
             bool stopBot = false;
 
             while (!stopBot)
