@@ -17,6 +17,7 @@ namespace SteidanPrime
     {
         private readonly DiscordSocketClient client;
         private readonly CommandService commands;
+        private bool stopBot = false;
         public CommandHandler commandHandler;
         public LoggingService loggingService;
         public static Settings settings { get; set; }
@@ -47,11 +48,21 @@ namespace SteidanPrime
             if (!File.Exists("Resources/config.json"))
             {
                 Console.WriteLine("Config file not found. Initializing bot settings.");
-                Console.WriteLine("Please input your bot token: ");
-                settings.Token = Console.ReadLine();
 
-                Console.WriteLine("Please choose your bot prefix: ");
-                settings.CommandPrefix = Console.ReadLine();
+                switch (settings.ApplicationRunningMethod)
+                {
+                    case ApplicationRunningMethod.Console:
+                        Console.WriteLine("Please input your bot token: ");
+                        settings.Token = Console.ReadLine();
+
+                        Console.WriteLine("Please choose your bot prefix: ");
+                        settings.CommandPrefix = Console.ReadLine();
+                        break;
+
+                    case ApplicationRunningMethod.Service:
+                        Console.WriteLine("Application is running as a service, please change config.");
+                        break;
+                }
 
                 string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 System.IO.File.WriteAllText("Resources/config.json", json);
@@ -86,8 +97,15 @@ namespace SteidanPrime
 
             loggingService = new LoggingService(client, commands);
 
-            await client.LoginAsync(TokenType.Bot, settings.Token);
-            await client.StartAsync();
+            try
+            {
+                await client.LoginAsync(TokenType.Bot, settings.Token);
+                await client.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
 
             // Initialize auto-save timer
             Timer timer = new Timer
@@ -99,27 +117,31 @@ namespace SteidanPrime
             timer.Elapsed += AutoSave;
             timer.Enabled = true;
 
-            bool stopBot = false;
-
             while (!stopBot)
             {
-                var consoleInput = (await GetInputAsync()).ToLower();
+                if (settings.ApplicationRunningMethod != ApplicationRunningMethod.Service)
+                    await ProcessConsoleInput();
+            }
+        }
 
-                switch (consoleInput)
-                {
-                    case "stop":
-                        markov.SerializeDict();
-                        stopBot = true;
-                        break;
+        public async Task ProcessConsoleInput()
+        {
+            var consoleInput = (await GetInputAsync()).ToLower();
 
-                    case "hello there":
-                        Console.WriteLine("General Kenobi");
-                        break;
+            switch (consoleInput)
+            {
+                case "stop":
+                    markov.SerializeDict();
+                    stopBot = true;
+                    break;
 
-                    default:
-                        Console.WriteLine("Command not recognized.");
-                        break;
-                }
+                case "hello there":
+                    Console.WriteLine("General Kenobi");
+                    break;
+
+                default:
+                    Console.WriteLine("Command not recognized.");
+                    break;
             }
         }
 
