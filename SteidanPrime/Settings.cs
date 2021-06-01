@@ -2,6 +2,12 @@
 
 namespace SteidanPrime
 {
+    public enum ApplicationRunningMethod
+    {
+        Service,
+        Console
+    }
+
     public class Settings
     {
         [JsonProperty("token")]
@@ -12,6 +18,6 @@ namespace SteidanPrime
         public string Owner { get; set; }
         public bool AutoReconnect { get; set; }
 
-
+        public ApplicationRunningMethod ApplicationRunningMethod { get; set; }
     }
 }

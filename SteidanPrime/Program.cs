@@ -17,6 +17,7 @@ namespace SteidanPrime
     {
         private readonly DiscordSocketClient client;
         private readonly CommandService commands;
+        private bool stopBot = false;
         public CommandHandler commandHandler;
         public LoggingService loggingService;
         public static Settings settings { get; set; }
@@ -99,27 +100,31 @@ namespace SteidanPrime
             timer.Elapsed += AutoSave;
             timer.Enabled = true;
 
-            bool stopBot = false;
-
             while (!stopBot)
             {
-                var consoleInput = (await GetInputAsync()).ToLower();
+                if (settings.ApplicationRunningMethod != ApplicationRunningMethod.Service)
+                    await ProcessConsoleInput();
+            }
+        }
 
-                switch (consoleInput)
-                {
-                    case "stop":
-                        markov.SerializeDict();
-                        stopBot = true;
-                        break;
+        public async Task ProcessConsoleInput()
+        {
+            var consoleInput = (await GetInputAsync()).ToLower();
 
-                    case "hello there":
-                        Console.WriteLine("General Kenobi");
-                        break;
+            switch (consoleInput)
+            {
+                case "stop":
+                    markov.SerializeDict();
+                    stopBot = true;
+                    break;
 
-                    default:
-                        Console.WriteLine("Command not recognized.");
-                        break;
-                }
+                case "hello there":
+                    Console.WriteLine("General Kenobi");
+                    break;
+
+                default:
+                    Console.WriteLine("Command not recognized.");
+                    break;
             }
         }
 
