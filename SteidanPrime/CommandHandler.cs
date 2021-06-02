@@ -119,7 +119,7 @@ namespace SteidanPrime
 
                     msg = Regex.Replace(msg,
                         @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
-                    msg = Regex.Replace(msg, @"[^a-zA-Z0-9<>:@!]", " ");
+                    msg = Regex.Replace(msg, "[*\",_&#^*\\-+.;[\\]'/|\\\\`~{}]+", " ");
                     msg = Regex.Replace(msg, @"\s+", " ");
 
                     string[] words = msg.Split(' ');
