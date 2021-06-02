@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SteidanPrime.Sokoban
 {
-    class Box
+    internal class Box
     {
         public int X { get; set; }
         public int Y { get; set; }
@@ -22,7 +22,7 @@ namespace SteidanPrime.Sokoban
         }
 
 
-        public Boolean IsDestination()
+        public bool IsDestination()
         {
             return Grid.IsDestination(X, Y);
         }
@@ -33,7 +33,7 @@ namespace SteidanPrime.Sokoban
             Y = OriginalY;
         }
 
-        public Boolean MoveUp()
+        public bool MoveUp()
         {
             if (!Grid.IsWall(X, Y - 1) && !Grid.IsBox(X, Y - 1))
             {
@@ -44,7 +44,7 @@ namespace SteidanPrime.Sokoban
             return false;
         }
 
-        public Boolean MoveRight()
+        public bool MoveRight()
         {
             if (!Grid.IsWall(X + 1, Y) && !Grid.IsBox(X + 1, Y))
             {
@@ -55,7 +55,7 @@ namespace SteidanPrime.Sokoban
             return false;
         }
 
-        public Boolean MoveDown()
+        public bool MoveDown()
         {
             if (!Grid.IsWall(X, Y + 1) && !Grid.IsBox(X, Y + 1))
             {
@@ -66,7 +66,7 @@ namespace SteidanPrime.Sokoban
             return false;
         }
 
-        public Boolean MoveLeft()
+        public bool MoveLeft()
         {
             if (!Grid.IsWall(X - 1, Y) && !Grid.IsBox(X - 1, Y))
             {

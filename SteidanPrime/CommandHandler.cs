@@ -12,21 +12,22 @@ namespace SteidanPrime
 {
     public class CommandHandler
     {
-        private readonly DiscordSocketClient client;
-        private readonly CommandService commands;
-        private readonly string prefix;
+        private readonly DiscordSocketClient _client;
+        private readonly CommandService _commands;
+        private readonly string _prefix;
 
         public CommandHandler(DiscordSocketClient client, CommandService commands, string prefix)
         {
-            this.client = client;
-            this.commands = commands;
-            this.prefix = prefix;
+            _client = client;
+            _commands = commands;
+            _prefix = prefix;
         }
 
         public async Task InstallCommandsAsync()
         {
             // Hook the MessageReceived event into our command handler
-            client.MessageReceived += HandleCommandAsync;
+            //_client.MessageReceived += HandleCommandAsync;
+            _client.MessageReceived += HandleMessageAsync;
 
             // Here we discover all of the command modules in the entry 
             // assembly and load them. Starting from Discord.NET 2.0, a
@@ -36,104 +37,122 @@ namespace SteidanPrime
             //
             // If you do not use Dependency Injection, pass null.
             // See Dependency Injection guide for more information.
-            await commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
+            await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
                                             services: null);
         }
 
-        private async Task HandleCommandAsync(SocketMessage messageParam)
+        private Task HandleMessageAsync(SocketMessage messageParam)
+        {
+            _ = Task.Run(async () =>
+            {
+                var message = messageParam as SocketUserMessage;
+                int argPos = 0;
+
+                if (message.Author.IsBot)
+                    return;
+
+                if (message.HasStringPrefix(_prefix, ref argPos) ||
+                      message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+                    await HandleCommandAsync(message, argPos);
+                else
+                    await HandleTextAsync(message, argPos);
+            });
+            return Task.CompletedTask;
+        }
+
+        private Task HandleTextAsync(SocketUserMessage message, int argPos = 0)
+        {
+            _ = Task.Run(async () =>
+            {
+                if (message == null) return;
+
+                var channel = message.Channel as SocketGuildChannel;
+                var guild = channel.Guild;
+
+                if (message.Author.IsBot)
+                    return;
+
+                if (Program.Sokoban.GameActive)
+                {
+                    var msg = message.Content;
+                    var game = Program.Sokoban;
+
+                    var moved = true;
+
+                    switch (msg.Trim().ToLower())
+                    {
+                        case "w":
+                            game.MovePlayer(Sokoban.Movement.UP);
+                            break;
+
+                        case "d":
+                            game.MovePlayer(Sokoban.Movement.RIGHT);
+                            break;
+
+                        case "s":
+                            game.MovePlayer(Sokoban.Movement.DOWN);
+                            break;
+
+                        case "a":
+                            game.MovePlayer(Sokoban.Movement.LEFT);
+                            break;
+
+                        case "r":
+                            game.MovePlayer(Sokoban.Movement.RESET);
+                            break;
+                        default:
+                            moved = false;
+                            break;
+                    }
+
+                    if (moved)
+                    {
+                        await message.DeleteAsync();
+                        return;
+                    }
+                }
+
+                if (!(message.HasStringPrefix(_prefix, ref argPos) ||
+                      message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
+                {
+                    string msg = message.ToString().Trim().ToLower();
+
+                    msg = Regex.Replace(msg,
+                        @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
+                    msg = Regex.Replace(msg, @"[^a-zA-Z0-9<>:@!]", " ");
+                    msg = Regex.Replace(msg, @"\s+", " ");
+
+                    string[] words = msg.Split(' ');
+
+                    for (int i = 0; i < words.Length - 2; i++)
+                    {
+                        string key = words[i] + ' ' + words[i + 1];
+
+                        if (Program.Markov.MarkovDict[guild.Id].ContainsKey(key))
+                        {
+                            Program.Markov.MarkovDict[guild.Id][key].Add(words[i + 2]);
+                        }
+                        else
+                        {
+                            var v = new List<string> {words[i + 2]};
+                            Program.Markov.MarkovDict[guild.Id][key] = v;
+                        }
+                    }
+                }
+            });
+            return Task.CompletedTask;
+        }
+        private async Task HandleCommandAsync(SocketUserMessage message, int argPos = 0)
         {
             // Don't process the command if it was a system message
-            var message = messageParam as SocketUserMessage;
             if (message == null) return;
 
-            // Used to get the guild in which the message was sent
-            var channel = message.Channel as SocketGuildChannel;
-            var guild = channel.Guild;
-
-            // Create a number to track where the prefix ends and the command begins
-            int argPos = 0;
-
-            // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if (message.Author.IsBot)
-                return;
-
-            if (Program.Sokoban.GameActive)
-            {
-                String msg = message.Content;
-                Sokoban.Game Game = Program.Sokoban;
-
-                Boolean Moved = true;
-
-                switch(msg.Trim().ToLower())
-                {
-                    case "w":
-                        Game.MovePlayer(Sokoban.Movement.UP);
-                        break;
-
-                    case "d":
-                        Game.MovePlayer(Sokoban.Movement.RIGHT);
-                        break;
-
-                    case "s":
-                        Game.MovePlayer(Sokoban.Movement.DOWN);
-                        break;
-
-                    case "a":
-                        Game.MovePlayer(Sokoban.Movement.LEFT);
-                        break;
-
-                    case "r":
-                        Game.MovePlayer(Sokoban.Movement.RESET);
-                        break;
-                    default:
-                        Moved = false;
-                        break;
-                }
-
-                if (Moved)
-                {
-                    await message.DeleteAsync();
-                    return;
-                }
-            }
-
-            // If it's not a command, parse the message for Markov chains
-            if (!(message.HasStringPrefix(prefix, ref argPos) ||
-                message.HasMentionPrefix(client.CurrentUser, ref argPos)))
-            {
-                string msg = message.ToString().Trim().ToLower();
-
-                Regex reg = new Regex("[*\",_&#^@?!*\\-+\\.]+");
-                msg = reg.Replace(msg, " ");
-
-                msg = Regex.Replace(msg, @"\s+", " ");
-                string[] words = msg.Split(' ');
-
-                for (int i = 0; i < words.Length - 2; i++)
-                {
-                    string key = words[i] + ' ' + words[i + 1];
-
-                    if (Program.markov.MarkovDict[guild.Id].ContainsKey(key))
-                    {
-                        Program.markov.MarkovDict[guild.Id][key].Add(words[i + 2]);
-                    }
-                    else
-                    {
-                        List<string> v = new List<string>();
-                        v.Add(words[i + 2]);
-                        Program.markov.MarkovDict[guild.Id][key] = v;
-                    }
-                }
-
-                return;
-            }
-
             // Create a WebSocket-based command context based on the message
-            var context = new SocketCommandContext(client, message);
+            var context = new SocketCommandContext(_client, message);
 
             // Execute the command with the command context we just
             // created, along with the service provider for precondition checks.
-            await commands.ExecuteAsync(
+            await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
                 services: null);

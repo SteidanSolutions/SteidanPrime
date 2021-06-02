@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SteidanPrime.Sokoban
 {
-    class Tile
+    internal class Tile
     {
         public int Color { get; set; }
         public StatusType Status { get; set; }
@@ -29,33 +29,22 @@ namespace SteidanPrime.Sokoban
 
         public override string ToString()
         {
-            if (Status == StatusType.GROUND)
-                return ":black_large_square:";
-
-            if (Status == StatusType.WALL)
-                switch (Color)
+            return Status switch
+            {
+                StatusType.GROUND => ":black_large_square:",
+                StatusType.WALL => Color switch
                 {
-                    case 0:
-                        return ":red_square:";
-                    case 1:
-                        return ":orange_square:";
-                    case 2:
-                        return ":yellow_square:";
-                    case 3:
-                        return ":green_square:";
-                    case 4:
-                        return ":blue_square:";
-                    default:
-                        return ":purple_square:";
-                }
-
-            if (Status == StatusType.BOX)
-                return ":brown_square:";
-
-            if (Status == StatusType.DESTINATION)
-                return ":negative_squared_cross_mark:";
-
-            return ":flushed:";
+                    0 => ":red_square:",
+                    1 => ":orange_square:",
+                    2 => ":yellow_square:",
+                    3 => ":green_square:",
+                    4 => ":blue_square:",
+                    _ => ":purple_square:"
+                },
+                StatusType.BOX => ":brown_square:",
+                StatusType.DESTINATION => ":negative_squared_cross_mark:",
+                _ => ":flushed:"
+            };
         }
     }
 }

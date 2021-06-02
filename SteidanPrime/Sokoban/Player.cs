@@ -28,92 +28,84 @@ namespace SteidanPrime.Sokoban
             this.Y = Y;
         }
 
-        public Boolean MoveUp()
+        public bool MoveUp()
         {
-            if (!Grid.IsWall(X, Y - 1))
-            {
-                if (Grid.IsBox(X, Y - 1))
-                {
-                    if (Grid.GetBoxAt(X, Y - 1).MoveUp())
-                    {
-                        Y -= 1;
-                        return true;
-                    }
+            if (Grid.IsWall(X, Y - 1)) return false;
 
-                    return false;
+            if (Grid.IsBox(X, Y - 1))
+            {
+                if (Grid.GetBoxAt(X, Y - 1).MoveUp())
+                {
+                    Y -= 1;
+                    return true;
                 }
 
-                Y -= 1;
-                return true;
+                return false;
             }
 
-            return false;
+            Y -= 1;
+            return true;
+
         }
 
-        public Boolean MoveRight()
+        public bool MoveRight()
         {
-            if (!Grid.IsWall(X + 1, Y))
-            {
-                if (Grid.IsBox(X + 1, Y))
-                {
-                    if (Grid.GetBoxAt(X + 1, Y).MoveRight())
-                    {
-                        X += 1;
-                        return true;
-                    }
+            if (Grid.IsWall(X + 1, Y)) return false;
 
-                    return false;
+            if (Grid.IsBox(X + 1, Y))
+            {
+                if (Grid.GetBoxAt(X + 1, Y).MoveRight())
+                {
+                    X += 1;
+                    return true;
                 }
 
-                X += 1;
-                return true;
+                return false;
             }
 
-            return false;
+            X += 1;
+            return true;
+
         }
 
-        public Boolean MoveDown()
+        public bool MoveDown()
         {
-            if (!Grid.IsWall(X, Y + 1))
-            {
-                if (Grid.IsBox(X, Y + 1))
-                {
-                    if (Grid.GetBoxAt(X, Y + 1).MoveDown())
-                    {
-                        Y += 1;
-                        return true;
-                    }
+            if (Grid.IsWall(X, Y + 1)) return false;
 
-                    return false;
+            if (Grid.IsBox(X, Y + 1))
+            {
+                if (Grid.GetBoxAt(X, Y + 1).MoveDown())
+                {
+                    Y += 1;
+                    return true;
                 }
 
-                Y += 1;
-                return true;
+                return false;
             }
 
-            return false;
+            Y += 1;
+            return true;
+
         }
 
-        public Boolean MoveLeft()
+        public bool MoveLeft()
         {
-            if (!Grid.IsWall(X - 1, Y))
-            {
-                if (Grid.IsBox(X - 1, Y))
-                {
-                    if (Grid.GetBoxAt(X - 1, Y).MoveLeft())
-                    {
-                        X -= 1;
-                        return true;
-                    }
+            if (Grid.IsWall(X - 1, Y)) return false;
 
-                    return false;
+            if (Grid.IsBox(X - 1, Y))
+            {
+                if (Grid.GetBoxAt(X - 1, Y).MoveLeft())
+                {
+                    X -= 1;
+                    return true;
                 }
 
-                X -= 1;
-                return true;
+                return false;
             }
 
-            return false;
+            X -= 1;
+            return true;
+
         }
 
         public void Reset()

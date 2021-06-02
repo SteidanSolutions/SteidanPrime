@@ -97,7 +97,7 @@ namespace SteidanPrime.Sokoban
 
         public async Task SendWinEmbed()
         {
-            String Prefix = Program.settings.CommandPrefix;
+            String Prefix = Program.Settings.CommandPrefix;
             EmbedBuilder EmbedBuilder = new EmbedBuilder();
             EmbedBuilder.Title = "You win!";
             EmbedBuilder.Description = $"Type ``{Prefix}sokoban continue`` to continue to level {Level}" +

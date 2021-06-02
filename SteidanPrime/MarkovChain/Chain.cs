@@ -12,14 +12,14 @@ namespace SteidanPrime.MarkovChain
         [Command("chain")]
         public async Task PrintChain()
         {
-            if (Program.markov.MarkovDict[Context.Guild.Id].Keys.Count == 0)
+            if (Program.Markov.MarkovDict[Context.Guild.Id].Keys.Count == 0)
             {
                 await Context.Channel.SendMessageAsync("Type something first you cunt.");
                 return;
             }
 
             SocketGuild guild = Context.Guild;
-            string message = Program.markov.GetChain(guild);
+            string message = Program.Markov.GetChain(guild);
             await Context.Channel.SendMessageAsync(message);
         }
     }

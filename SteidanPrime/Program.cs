@@ -15,13 +15,13 @@ namespace SteidanPrime
 {
     class Program
     {
-        private readonly DiscordSocketClient client;
-        private readonly CommandService commands;
-        private bool stopBot = false;
-        public CommandHandler commandHandler;
-        public LoggingService loggingService;
-        public static Settings settings { get; set; }
-        public static Markov markov { get; set; }
+        private readonly DiscordSocketClient _client;
+        private readonly CommandService _commands;
+        private bool _stopBot = false;
+        public CommandHandler CommandHandler;
+        public LoggingService LoggingService;
+        public static Settings Settings { get; set; }
+        public static Markov Markov { get; set; }
         public static Sokoban.Game Sokoban { get; set; }
 
         static void Main(string[] args)
@@ -29,78 +29,76 @@ namespace SteidanPrime
 
         private Program()
         {
-            settings = new Settings();
+            Settings = new Settings();
 
-            client = new DiscordSocketClient(new DiscordSocketConfig
+            _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
             });
 
-            commands = new CommandService(new CommandServiceConfig
+            _commands = new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Debug,
                 CaseSensitiveCommands = false              
             });
 
-            client.Ready += ClientReady;
-            client.JoinedGuild += JoinedGuild;
+            _client.Ready += ClientReady;
+            _client.JoinedGuild += JoinedGuild;
 
-            if (!File.Exists("Resources/config.json"))
+            if (File.Exists("Resources/config.json")) return;
+
+            Console.WriteLine("Config file not found. Initializing bot settings.");
+            switch (Settings.ApplicationRunningMethod)
             {
-                Console.WriteLine("Config file not found. Initializing bot settings.");
+                case ApplicationRunningMethod.CONSOLE:
+                    Console.WriteLine("Please input your bot token: ");
+                    Settings.Token = Console.ReadLine();
 
-                switch (settings.ApplicationRunningMethod)
-                {
-                    case ApplicationRunningMethod.Console:
-                        Console.WriteLine("Please input your bot token: ");
-                        settings.Token = Console.ReadLine();
+                    Console.WriteLine("Please choose your bot prefix: ");
+                    Settings.CommandPrefix = Console.ReadLine();
+                    break;
 
-                        Console.WriteLine("Please choose your bot prefix: ");
-                        settings.CommandPrefix = Console.ReadLine();
-                        break;
-
-                    case ApplicationRunningMethod.Service:
-                        Console.WriteLine("Application is running as a service, please change config.");
-                        break;
-                }
-
-                string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-                System.IO.File.WriteAllText("Resources/config.json", json);
+                case ApplicationRunningMethod.SERVICE:
+                    Console.WriteLine("Application is running as a service, please change config.");
+                    break;
             }
+
+            var json = JsonConvert.SerializeObject(Settings, Formatting.Indented);
+            System.IO.File.WriteAllText("Resources/config.json", json);
         }
 
         private async Task ClientReady()
         {
-            await client.SetGameAsync("Hello there");
-            markov = new Markov(client);
+            await _client.SetGameAsync("Hello there");
+            Markov = new Markov(_client);
             Sokoban = new Sokoban.Game();
         }
 
         private static void AutoSave(object source, ElapsedEventArgs e)
         {
-            markov.SerializeDict();
+            Markov.SerializeDict();
             Console.WriteLine("Dictionaries auto-saved.");
         }
 
         private async Task JoinedGuild(SocketGuild Guild)
         {
-            if (!markov.MarkovDict.ContainsKey(Guild.Id))
-                markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
+            if (!Markov.MarkovDict.ContainsKey(Guild.Id))
+                Markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
         }
 
         public async Task MainAsync()
         {
-            settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText("Resources/config.json"));
+            Settings = JsonConvert.DeserializeObject<Settings>(await File.ReadAllTextAsync("Resources/config.json"));
 
-            commandHandler = new CommandHandler(client, commands, settings.CommandPrefix);
-            await commandHandler.InstallCommandsAsync();
+            CommandHandler = new CommandHandler(_client, _commands, Settings.CommandPrefix);
+            await CommandHandler.InstallCommandsAsync();
 
-            loggingService = new LoggingService(client, commands);
+            LoggingService = new LoggingService(_client, _commands);
 
             try
             {
-                await client.LoginAsync(TokenType.Bot, settings.Token);
-                await client.StartAsync();
+                await _client.LoginAsync(TokenType.Bot, Settings.Token);
+                await _client.StartAsync();
             }
             catch (Exception ex)
             {
@@ -117,9 +115,9 @@ namespace SteidanPrime
             timer.Elapsed += AutoSave;
             timer.Enabled = true;
 
-            while (!stopBot)
+            while (!_stopBot)
             {
-                if (settings.ApplicationRunningMethod != ApplicationRunningMethod.Service)
+                if (Settings.ApplicationRunningMethod != ApplicationRunningMethod.SERVICE)
                     await ProcessConsoleInput();
             }
         }
@@ -131,8 +129,8 @@ namespace SteidanPrime
             switch (consoleInput)
             {
                 case "stop":
-                    markov.SerializeDict();
-                    stopBot = true;
+                    Markov.SerializeDict();
+                    _stopBot = true;
                     break;
 
                 case "hello there":
@@ -145,9 +143,9 @@ namespace SteidanPrime
             }
         }
 
-        private async Task<string> GetInputAsync()
+        private static async Task<string> GetInputAsync()
         {
-            return await Task.Run(() => Console.ReadLine());
+            return await Task.Run(Console.ReadLine);
         }      
     }
 }

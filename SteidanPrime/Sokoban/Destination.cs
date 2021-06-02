@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SteidanPrime.Sokoban
 {
-    class Destination
+    internal class Destination
     {
         public int X { get; set; }
         public int Y { get; set; }
@@ -17,7 +17,7 @@ namespace SteidanPrime.Sokoban
             this.Grid = Grid;
         }
 
-        public Boolean HasBox(Grid Grid)
+        public bool HasBox(Grid Grid)
         {
             return Grid.IsWall(X, Y);
         }

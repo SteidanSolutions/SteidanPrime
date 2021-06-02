@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SteidanPrime.Sokoban
 {
-    enum Movement
+    internal enum Movement
     {
         UP,
         RIGHT,

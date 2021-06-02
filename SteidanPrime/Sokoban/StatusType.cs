@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SteidanPrime.Sokoban
 {
-    enum StatusType
+    internal enum StatusType
     {
         GROUND = 0,
         WALL = 1,
