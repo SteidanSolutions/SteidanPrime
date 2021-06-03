@@ -3,11 +3,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using SteidanPrime.MarkovChain;
-using SteidanPrime.Sokoban;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -44,6 +42,12 @@ namespace SteidanPrime
 
             _client.Ready += ClientReady;
             _client.JoinedGuild += JoinedGuild;
+
+            if (!Directory.Exists("Resources"))
+                Directory.CreateDirectory("Resources");
+
+            if (!Directory.Exists("Resources/Dictionaries"))
+                Directory.CreateDirectory("Resources/Dictionaries");
 
             if (File.Exists("Resources/config.json")) return;
 
@@ -84,6 +88,9 @@ namespace SteidanPrime
         {
             if (!Markov.MarkovDict.ContainsKey(Guild.Id))
                 Markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
+
+            if(!Markov.StartingSequences.ContainsKey(Guild.Id))
+                Markov.StartingSequences[Guild.Id] = new List<string>();
         }
 
         public async Task MainAsync()

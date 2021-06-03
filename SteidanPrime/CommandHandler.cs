@@ -1,9 +1,6 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.WebSocket;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -82,23 +79,23 @@ namespace SteidanPrime
                     switch (msg.Trim().ToLower())
                     {
                         case "w":
-                            game.MovePlayer(Sokoban.Movement.UP);
+                            await game.MovePlayerAsync(Sokoban.Movement.UP);
                             break;
 
                         case "d":
-                            game.MovePlayer(Sokoban.Movement.RIGHT);
+                            await game.MovePlayerAsync(Sokoban.Movement.RIGHT);
                             break;
 
                         case "s":
-                            game.MovePlayer(Sokoban.Movement.DOWN);
+                            await game.MovePlayerAsync(Sokoban.Movement.DOWN);
                             break;
 
                         case "a":
-                            game.MovePlayer(Sokoban.Movement.LEFT);
+                            await game.MovePlayerAsync(Sokoban.Movement.LEFT);
                             break;
 
                         case "r":
-                            game.MovePlayer(Sokoban.Movement.RESET);
+                            await game.MovePlayerAsync(Sokoban.Movement.RESET);
                             break;
                         default:
                             moved = false;
@@ -123,6 +120,8 @@ namespace SteidanPrime
                     msg = Regex.Replace(msg, @"\s+", " ");
 
                     string[] words = msg.Split(' ');
+
+                    Program.Markov.StartingSequences[guild.Id].Add($"{words[0]} {words[1]}");
 
                     for (int i = 0; i < words.Length - 2; i++)
                     {

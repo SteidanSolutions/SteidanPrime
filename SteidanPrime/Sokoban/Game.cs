@@ -41,7 +41,7 @@ namespace SteidanPrime.Sokoban
             this.GameActive = false;
         }
 
-        public void MovePlayer(Movement Direction)
+        public async Task MovePlayerAsync(Movement Direction)
         {
             if (!Grid.HasWon())
             {
@@ -69,17 +69,17 @@ namespace SteidanPrime.Sokoban
                 }
 
                 if (!Grid.HasWon())
-                    SendGameEmbed();
+                    await SendGameEmbed();
             }
 
             if (Grid.HasWon())
             {
                 GameActive = false;
-                SendWinEmbed();
+                await SendWinEmbed();
             }
         }
 
-        public void ContinueGame()
+        public async Task ContinueGame()
         {
             Level += 1;
 
@@ -92,7 +92,7 @@ namespace SteidanPrime.Sokoban
             Grid = new Grid(Width, Height, Level);
             GameActive = true;
             CurrentEmbed = null;
-            SendGameEmbed();
+            await SendGameEmbed();
         }
 
         public async Task SendWinEmbed()
