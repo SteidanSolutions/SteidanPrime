@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord;
 
 namespace SteidanPrime
 {
@@ -25,6 +26,7 @@ namespace SteidanPrime
             // Hook the MessageReceived event into our command handler
             //_client.MessageReceived += HandleCommandAsync;
             _client.MessageReceived += HandleMessageAsync;
+            _commands.CommandExecuted += OnCommandExecutedAsync;
 
             // Here we discover all of the command modules in the entry 
             // assembly and load them. Starting from Discord.NET 2.0, a
@@ -36,6 +38,14 @@ namespace SteidanPrime
             // See Dependency Injection guide for more information.
             await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
                                             services: null);
+        }
+
+        public async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        {
+            if (!string.IsNullOrEmpty(result?.ErrorReason))
+            {
+                await context.Channel.SendMessageAsync(result.ErrorReason);
+            }
         }
 
         private Task HandleMessageAsync(SocketMessage messageParam)

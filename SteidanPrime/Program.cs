@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
@@ -21,6 +21,7 @@ namespace SteidanPrime
         public static Settings Settings { get; set; }
         public static Markov Markov { get; set; }
         public static Sokoban.Game Sokoban { get; set; }
+        public static Saveboard.Saveboard Saveboard { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -76,11 +77,13 @@ namespace SteidanPrime
             await _client.SetGameAsync("Hello there");
             Markov = new Markov(_client);
             Sokoban = new Sokoban.Game();
+            Saveboard = new Saveboard.Saveboard();
         }
 
         private static void AutoSave(object source, ElapsedEventArgs e)
         {
             Markov.SerializeDict();
+            Saveboard.SerializeSaveboard();
             Console.WriteLine("Dictionaries auto-saved.");
         }
 
@@ -137,6 +140,7 @@ namespace SteidanPrime
             {
                 case "stop":
                     Markov.SerializeDict();
+                    Saveboard.SerializeSaveboard();
                     _stopBot = true;
                     break;
 

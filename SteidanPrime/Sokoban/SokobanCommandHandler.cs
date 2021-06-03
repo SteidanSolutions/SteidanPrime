@@ -32,7 +32,7 @@ namespace SteidanPrime.Sokoban
         [Command("continue")]
         public async Task ContinueGame()
         {
-            Program.Sokoban.ContinueGame();
+            await Program.Sokoban.ContinueGame();
             await Context.Message.DeleteAsync();
         }
         
