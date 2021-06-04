@@ -126,19 +126,10 @@ namespace SteidanPrime
 
                     msg = Regex.Replace(msg,
                         @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
-                    //msg = Regex.Replace(msg, "[*\",_&#^*\\-+;[\\]'/|\\\\`~{}]+", " ");
+                    msg = Regex.Replace(msg, "[*\",_&^*\\-+.?;[\\]'/|\\\\`~{}]+", " ");
                     msg = Regex.Replace(msg, @"\s+", " ");
-                    await ParseMarkovWords(Regex.Replace(msg, "[.?]+", " ")
-                                                .Split(' ', System.StringSplitOptions.RemoveEmptyEntries), guild.Id);
 
-                    string[] sentences = msg.Split(new char[]{'.', '?'}, System.StringSplitOptions.RemoveEmptyEntries);
-
-                    foreach (var sentence in sentences)
-                    {
-                        string[] words = sentence.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-                        Program.Markov.StartingSequences[guild.Id].Add($"{words[0]} {words[1]}");
-                    }
-
+                    await ParseMarkovWords(msg.Split(' ', System.StringSplitOptions.RemoveEmptyEntries), guild.Id);
                 }
             });
             return Task.CompletedTask;
@@ -159,25 +150,22 @@ namespace SteidanPrime
                 services: null);
         }
 
-        private Task ParseMarkovWords(string[] words, ulong guildId)
+        private static Task ParseMarkovWords(string[] words, ulong guildId)
         {
-            _ = Task.Run(async () =>
+            for (int i = 0; i < words.Length - 2; i++)
             {
-                for (int i = 0; i < words.Length - 2; i++)
-                {
-                    string key = words[i] + ' ' + words[i + 1];
+                string key = words[i] + ' ' + words[i + 1];
 
-                    if (Program.Markov.MarkovDict[guildId].ContainsKey(key))
-                    {
-                        Program.Markov.MarkovDict[guildId][key].Add(words[i + 2]);
-                    }
-                    else
-                    {
-                        var v = new List<string> {words[i + 2]};
-                        Program.Markov.MarkovDict[guildId][key] = v;
-                    }
+                if (Program.Markov.MarkovDict[guildId].ContainsKey(key))
+                {
+                    Program.Markov.MarkovDict[guildId][key].Add(words[i + 2]);
                 }
-            });
+                else
+                {
+                    var v = new List<string> {words[i + 2]};
+                    Program.Markov.MarkovDict[guildId][key] = v;
+                }
+            }
             return Task.CompletedTask;
         }
     }

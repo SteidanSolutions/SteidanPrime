@@ -91,9 +91,6 @@ namespace SteidanPrime
         {
             if (!Markov.MarkovDict.ContainsKey(Guild.Id))
                 Markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
-
-            if(!Markov.StartingSequences.ContainsKey(Guild.Id))
-                Markov.StartingSequences[Guild.Id] = new List<string>();
         }
 
         public async Task MainAsync()
