@@ -79,6 +79,9 @@ namespace SteidanPrime
                 if (message.Author.IsBot)
                     return;
 
+                if (message.Content.ToLower().Contains("madge"))
+                    await new SocketCommandContext(_client, message).Channel.SendMessageAsync("<:Madge:788536698098810881>");
+
                 if (Program.Sokoban.GameActive)
                 {
                     var msg = message.Content;
