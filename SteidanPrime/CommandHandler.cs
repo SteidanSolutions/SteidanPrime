@@ -80,7 +80,8 @@ namespace SteidanPrime
                     return;
 
                 if (message.Content.ToLower().Contains("madge"))
-                    await new SocketCommandContext(_client, message).Channel.SendMessageAsync("<:Madge:788536698098810881>");
+                    await new SocketCommandContext(_client, message).Message.AddReactionAsync(
+                    Emote.Parse("<:Madge:788536698098810881>"));
 
                 if (Program.Sokoban.GameActive)
                 {
