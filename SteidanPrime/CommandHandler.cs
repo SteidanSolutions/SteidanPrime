@@ -26,7 +26,8 @@ namespace SteidanPrime
             // Hook the MessageReceived event into our command handler
             //_client.MessageReceived += HandleCommandAsync;
             _client.MessageReceived += HandleMessageAsync;
-            _commands.CommandExecuted += OnCommandExecutedAsync;
+            //TODO fix the error message in commands
+            //_commands.CommandExecuted += OnCommandExecutedAsync; 
 
             // Here we discover all of the command modules in the entry 
             // assembly and load them. Starting from Discord.NET 2.0, a
