@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Timers;
+using Discord.Addons.Interactive;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SteidanPrime
 {
@@ -15,6 +17,7 @@ namespace SteidanPrime
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
+        private readonly IServiceProvider _services;
         private bool _stopBot = false;
         public CommandHandler CommandHandler;
         public LoggingService LoggingService;
@@ -40,6 +43,13 @@ namespace SteidanPrime
                 LogLevel = LogSeverity.Debug,
                 CaseSensitiveCommands = false              
             });
+
+            _services = new ServiceCollection()
+                .AddSingleton(_client)
+                .AddSingleton<InteractiveService>()
+                .AddSingleton(_commands)
+                .AddSingleton<CommandHandler>()
+                .BuildServiceProvider();
 
             _client.Ready += ClientReady;
             _client.JoinedGuild += JoinedGuild;
@@ -97,7 +107,7 @@ namespace SteidanPrime
         {
             Settings = JsonConvert.DeserializeObject<Settings>(await File.ReadAllTextAsync("Resources/config.json"));
 
-            CommandHandler = new CommandHandler(_client, _commands, Settings.CommandPrefix);
+            CommandHandler = new CommandHandler(_client, _commands, _services, Settings.CommandPrefix);
             await CommandHandler.InstallCommandsAsync();
 
             LoggingService = new LoggingService(_client, _commands);

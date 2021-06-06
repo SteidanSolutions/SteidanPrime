@@ -7,11 +7,13 @@ using Discord;
 
 namespace SteidanPrime.MarkovChain
 {
-    [Group("dictionary")]
+    [Group("Dictionary")]
     [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     [RequireOwner(Group = "Permission")]
     public class Dictionary : ModuleBase<SocketCommandContext>
     {
+        [Remarks("Deletes everything from the Markov dictionary for this server in case you want to start fresh. Requires ``Administrator`` permission to use.")]
+        [Summary("Resets the current dictionary for Markov chain.")]
         [Command("reset")]
         public async Task ResetDictionary()
         {
@@ -25,6 +27,8 @@ namespace SteidanPrime.MarkovChain
             await Context.Channel.SendMessageAsync("Dictionary successfully reset.");
         }
 
+        [Remarks("In case you want to see what's in the Markov dictionary for this server. Exports it as a json file in the same channel where the command is called. Requires ``Administrator`` permission to use.")]
+        [Summary("Exports the current Markov chain dictionary as a json file.")]
         [Command("export")]
         public async Task ExportDictionary()
         {
@@ -37,6 +41,8 @@ namespace SteidanPrime.MarkovChain
             await Context.Channel.SendFileAsync("Resources/Dictionaries/" + guildId.ToString() + ".json");
         }
 
+        [Remarks("If you are experiencing issues with Markov, try reloading the dictionary, but it shouldn't be necessary. Requires ``Administrator`` permission to use.")]
+        [Summary("Reloads the current Markov chain dictionary in case of issues.")]
         [Command("reload")]
         public async Task ReloadDictionary()
         {

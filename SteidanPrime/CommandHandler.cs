@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using System;
+using Discord.Commands;
 using Discord.WebSocket;
 using System.Collections.Generic;
 using System.Reflection;
@@ -12,13 +13,15 @@ namespace SteidanPrime
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
+        private readonly IServiceProvider _services;
         private readonly string _prefix;
 
-        public CommandHandler(DiscordSocketClient client, CommandService commands, string prefix)
+        public CommandHandler(DiscordSocketClient client, CommandService commands, IServiceProvider services, string prefix)
         {
             _client = client;
             _commands = commands;
             _prefix = prefix;
+            _services = services;
         }
 
         public async Task InstallCommandsAsync()
@@ -26,8 +29,7 @@ namespace SteidanPrime
             // Hook the MessageReceived event into our command handler
             //_client.MessageReceived += HandleCommandAsync;
             _client.MessageReceived += HandleMessageAsync;
-            //TODO fix the error message in commands
-            //_commands.CommandExecuted += OnCommandExecutedAsync; 
+            _commands.CommandExecuted += OnCommandExecutedAsync; 
 
             // Here we discover all of the command modules in the entry 
             // assembly and load them. Starting from Discord.NET 2.0, a
@@ -38,14 +40,37 @@ namespace SteidanPrime
             // If you do not use Dependency Injection, pass null.
             // See Dependency Injection guide for more information.
             await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
-                                            services: null);
+                                            services: _services);
         }
 
         public async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
-            if (!string.IsNullOrEmpty(result?.ErrorReason))
+            if (!result.IsSuccess)
             {
-                await context.Channel.SendMessageAsync(result.ErrorReason);
+                switch (result.Error)
+                {
+                    case CommandError.UnmetPrecondition:
+                        await context.Channel.SendMessageAsync($"You do not have sufficient permissions to use ``!{command.Value.Name}``. Use ``!help {command.Value.Name}`` to find out more.");
+                        break;
+                    case CommandError.Unsuccessful:
+                        break;
+                    case CommandError.UnknownCommand:
+                        break;
+                    case CommandError.ParseFailed:
+                        break;
+                    case CommandError.BadArgCount:
+                        break;
+                    case CommandError.ObjectNotFound:
+                        break;
+                    case CommandError.MultipleMatches:
+                        break;
+                    case CommandError.Exception:
+                        break;
+                    case null:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
 
@@ -152,7 +177,7 @@ namespace SteidanPrime
             await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
-                services: null);
+                services: _services);
         }
 
         private static Task ParseMarkovWords(string[] words, ulong guildId)

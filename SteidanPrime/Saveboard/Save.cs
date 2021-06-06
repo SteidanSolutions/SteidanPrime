@@ -1,5 +1,4 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -13,8 +12,10 @@ namespace SteidanPrime.Saveboard
         
         [RequireUserPermission(GuildPermission.ManageMessages, Group = "Permissions")]
         [RequireOwner(Group = "Permissions")]
+        [Remarks("Since the number of pinned messages per channel is limited, you can use this command to save any message you want to a channel designated using ``!savehere``. Use either message ID or message link with the command. Requires ``Manage Messages`` permission to use.")]
+        [Summary("Saves a message to the designated channel.")]
         [Command("save")]
-        public async Task SaveMessage(string message)
+        public async Task SaveMessage([Summary("<message id> | <message link>")] string message)
         {
             if (!Program.Saveboard.SaveChannels.ContainsKey(Context.Guild.Id))
             {
@@ -86,6 +87,8 @@ namespace SteidanPrime.Saveboard
 
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permissions")]
         [RequireOwner(Group = "Permissions")]
+        [Remarks("Use to designate the channel which the bot will use to save messages. You should probably have a dedicated channel for it and let only the bot send messages there. Requires ``Administrator`` permission to use.")]
+        [Summary("Designate the channel this message is typed in to be used as the saveboard.")]
         [Command("savehere")]
         public async Task SaveHere()
         {
