@@ -1,17 +1,24 @@
-﻿using Discord.Commands;
-using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
+using Newtonsoft.Json;
 
-namespace SteidanPrime.MarkovChain
+namespace SteidanPrime.Services.Markov
 {
     [Group("Dictionary")]
     [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     [RequireOwner(Group = "Permission")]
     public class Dictionary : ModuleBase<SocketCommandContext>
     {
+        private readonly MarkovService _markovService;
+
+        public Dictionary(MarkovService markovService)
+        {
+            _markovService = markovService;
+        }
+
         [Remarks("Deletes everything from the Markov dictionary for this server in case you want to start fresh. Requires ``Administrator`` permission to use.")]
         [Summary("Resets the current dictionary for Markov chain.")]
         [Command("reset")]
@@ -19,7 +26,7 @@ namespace SteidanPrime.MarkovChain
         {
             ulong guildId = Context.Guild.Id;
             Dictionary<string, List<string>> markovDictionary = new Dictionary<string, List<string>>();
-            Program.Markov.MarkovDict[guildId] = markovDictionary;
+            _markovService.MarkovDict[guildId] = markovDictionary;
 
             string markovJson = JsonConvert.SerializeObject(markovDictionary, Formatting.Indented);
             await File.WriteAllTextAsync("Resources/Dictionaries/" + guildId.ToString() + ".json", markovJson);
@@ -33,7 +40,7 @@ namespace SteidanPrime.MarkovChain
         public async Task ExportDictionary()
         {
             ulong guildId = Context.Guild.Id;
-            Dictionary<string, List<string>> dictionary = Program.Markov.MarkovDict[guildId];
+            Dictionary<string, List<string>> dictionary = _markovService.MarkovDict[guildId];
 
             string markovJson = JsonConvert.SerializeObject(dictionary, Formatting.Indented);
             await File.WriteAllTextAsync("Resources/Dictionaries/" + guildId.ToString() + ".json", markovJson);
@@ -54,7 +61,7 @@ namespace SteidanPrime.MarkovChain
             else
                 dictionary = new Dictionary<string, List<string>>();
 
-            Program.Markov.MarkovDict[guildId] = dictionary;
+            _markovService.MarkovDict[guildId] = dictionary;
             await Context.Channel.SendMessageAsync("Dictionary successfully reloaded.");
         }
     }

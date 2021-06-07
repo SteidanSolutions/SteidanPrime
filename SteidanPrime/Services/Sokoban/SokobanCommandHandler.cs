@@ -1,17 +1,24 @@
-﻿using Discord.Commands;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Discord.Commands;
 
-namespace SteidanPrime.Sokoban
+namespace SteidanPrime.Services.Sokoban
 {
     [Group("Sokoban")]
     public class SokobanCommandHandler : ModuleBase<SocketCommandContext>
     {
+        private readonly SokobanService _sokobanService;
+
+        public SokobanCommandHandler(SokobanService sokobanService)
+        {
+            _sokobanService = sokobanService;
+        }
+
         [Remarks("Starts a game of Sokoban in a text channel using embeds. Follow instructions in the message to play. Bot should probably have ``Manage Messages`` permission so it can delete messages used to play the game and prevent the spam.")]
         [Summary("Starts the Sokoban game in an embed message.")]
         [Command("play")]
         public async Task StartGame()
         {
-            Program.Sokoban.NewGame(Context);
+            await _sokobanService.NewGameAsync(Context);
             await Context.Message.DeleteAsync();
         }
 
@@ -20,10 +27,10 @@ namespace SteidanPrime.Sokoban
         [Command("stop")]
         public async Task StopGame()
         {
-            if (Program.Sokoban.GameActive)
+            if (_sokobanService.SokobanGameDictionary.ContainsKey(Context.Guild.Id))
             {
-                Program.Sokoban.StopGame();
-                await Context.Channel.SendMessageAsync("Game stopped.");
+                _sokobanService.StopGame(Context);
+                await Context.Channel.SendMessageAsync("Sokoban game stopped.");
             }
             else
             {
@@ -38,7 +45,7 @@ namespace SteidanPrime.Sokoban
         [Command("continue")]
         public async Task ContinueGame()
         {
-            await Program.Sokoban.ContinueGame();
+            await _sokobanService.ContinueGame(Context);
             await Context.Message.DeleteAsync();
         }
         

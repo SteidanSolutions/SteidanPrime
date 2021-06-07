@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    internal class Tile
+    public class Tile
     {
         public int Color { get; set; }
         public StatusType Status { get; set; }
@@ -14,12 +14,6 @@
         public Tile(StatusType Status)
         {
             this.Color = 0;
-            this.Status = Status;
-        }
-
-        public void SetStatus(int Color, StatusType Status)
-        {
-            this.Color = Color;
             this.Status = Status;
         }
 

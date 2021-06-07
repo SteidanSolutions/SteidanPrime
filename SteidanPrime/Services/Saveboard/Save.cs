@@ -5,11 +5,17 @@ using Discord;
 using Discord.Commands;
 using Color = Discord.Color;
 
-namespace SteidanPrime.Saveboard
+namespace SteidanPrime.Services.Saveboard
 {
     public class Save : ModuleBase<SocketCommandContext>
     {
-        
+        private readonly SaveboardService _saveboardService;
+
+        public Save(SaveboardService saveboardService)
+        {
+            _saveboardService = saveboardService;
+        }
+
         [RequireUserPermission(GuildPermission.ManageMessages, Group = "Permissions")]
         [RequireOwner(Group = "Permissions")]
         [Remarks("Since the number of pinned messages per channel is limited, you can use this command to save any message you want to a channel designated using ``!savehere``. Use either message ID or message link with the command. Requires ``Manage Messages`` permission to use.")]
@@ -17,7 +23,7 @@ namespace SteidanPrime.Saveboard
         [Command("save")]
         public async Task SaveMessage([Summary("<message id> | <message link>")] string message)
         {
-            if (!Program.Saveboard.SaveChannels.ContainsKey(Context.Guild.Id))
+            if (!_saveboardService.SaveChannels.ContainsKey(Context.Guild.Id))
             {
                 await Context.Channel.SendMessageAsync(
                     "Saveboard channel not set. Use ``!savehere`` to set the channel.");
@@ -81,7 +87,7 @@ namespace SteidanPrime.Saveboard
             }
 
             var embed = embedBuilder.Build();
-            await Context.Guild.GetTextChannel(Program.Saveboard.SaveChannels[Context.Guild.Id])
+            await Context.Guild.GetTextChannel(_saveboardService.SaveChannels[Context.Guild.Id])
                 .SendMessageAsync(null, false, embed);
         }
 
@@ -92,7 +98,7 @@ namespace SteidanPrime.Saveboard
         [Command("savehere")]
         public async Task SaveHere()
         {
-            Program.Saveboard.SaveChannels[Context.Guild.Id] = Context.Channel.Id;
+            _saveboardService.SaveChannels[Context.Guild.Id] = Context.Channel.Id;
             await Context.Channel.SendMessageAsync($"Saveboard will now save messages in <#{Context.Channel.Id}>");
         }
     }

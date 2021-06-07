@@ -1,13 +1,15 @@
 ﻿using System;
-using Discord.Commands;
-using Discord.WebSocket;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using SteidanPrime.Services.Markov;
+using SteidanPrime.Services.Sokoban;
 
-namespace SteidanPrime
+namespace SteidanPrime.Services
 {
     public class CommandHandler
     {
@@ -95,7 +97,7 @@ namespace SteidanPrime
 
         private Task HandleTextAsync(SocketUserMessage message, int argPos = 0)
         {
-            _ = Task.Run(async () =>
+            return Task.Run(async () =>
             {
                 if (message == null) return;
 
@@ -109,45 +111,8 @@ namespace SteidanPrime
                     await new SocketCommandContext(_client, message).Message.AddReactionAsync(
                     Emote.Parse("<:Madge:788536698098810881>"));
 
-                if (Program.Sokoban.GameActive)
-                {
-                    var msg = message.Content;
-                    var game = Program.Sokoban;
-
-                    var moved = true;
-
-                    switch (msg.Trim().ToLower())
-                    {
-                        case "w":
-                            await game.MovePlayerAsync(Sokoban.Movement.UP);
-                            break;
-
-                        case "d":
-                            await game.MovePlayerAsync(Sokoban.Movement.RIGHT);
-                            break;
-
-                        case "s":
-                            await game.MovePlayerAsync(Sokoban.Movement.DOWN);
-                            break;
-
-                        case "a":
-                            await game.MovePlayerAsync(Sokoban.Movement.LEFT);
-                            break;
-
-                        case "r":
-                            await game.MovePlayerAsync(Sokoban.Movement.RESET);
-                            break;
-                        default:
-                            moved = false;
-                            break;
-                    }
-
-                    if (moved)
-                    {
-                        await message.DeleteAsync();
-                        return;
-                    }
-                }
+                if (_services.GetRequiredService<SokobanService>().SokobanGameDictionary.ContainsKey(guild.Id))
+                    await _services.GetRequiredService<SokobanService>().ParseInput(new SocketCommandContext(_client, message));
 
                 if (!(message.HasStringPrefix(_prefix, ref argPos) ||
                       message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
@@ -158,11 +123,10 @@ namespace SteidanPrime
                         @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
                     msg = Regex.Replace(msg, "[*\",_&^*\\-+.?;[\\]'/|\\\\`~{}]+", " ");
                     msg = Regex.Replace(msg, @"\s+", " ");
-
-                    await ParseMarkovWords(msg.Split(' ', System.StringSplitOptions.RemoveEmptyEntries), guild.Id);
+                    await _services.GetRequiredService<MarkovService>().ParseMarkovWords(msg.Split(' ', StringSplitOptions.RemoveEmptyEntries), guild.Id);
                 }
             });
-            return Task.CompletedTask;
+            //return Task.CompletedTask;
         }
         private async Task HandleCommandAsync(SocketUserMessage message, int argPos = 0)
         {
@@ -178,25 +142,6 @@ namespace SteidanPrime
                 context: context,
                 argPos: argPos,
                 services: _services);
-        }
-
-        private static Task ParseMarkovWords(string[] words, ulong guildId)
-        {
-            for (int i = 0; i < words.Length - 2; i++)
-            {
-                string key = words[i] + ' ' + words[i + 1];
-
-                if (Program.Markov.MarkovDict[guildId].ContainsKey(key))
-                {
-                    Program.Markov.MarkovDict[guildId][key].Add(words[i + 2]);
-                }
-                else
-                {
-                    var v = new List<string> {words[i + 2]};
-                    Program.Markov.MarkovDict[guildId][key] = v;
-                }
-            }
-            return Task.CompletedTask;
         }
     }
 }

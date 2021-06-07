@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SteidanPrime.Sokoban
+namespace SteidanPrime.Services.Sokoban
 {
-    class Grid
+    public class Grid
     {
         private const int MAX_BOXES = 8;
 

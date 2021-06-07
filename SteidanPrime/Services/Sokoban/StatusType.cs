@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    internal enum StatusType
+    public enum StatusType
     {
         GROUND = 0,
         WALL = 1,

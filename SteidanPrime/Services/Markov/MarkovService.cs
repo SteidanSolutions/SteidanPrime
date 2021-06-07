@@ -1,22 +1,25 @@
-﻿using Discord.WebSocket;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using Discord.WebSocket;
+using Newtonsoft.Json;
 
-namespace SteidanPrime.MarkovChain
+namespace SteidanPrime.Services.Markov
 {
-    class Markov
+    public class MarkovService
     {
         private readonly DiscordSocketClient _client;
         public Dictionary<ulong, Dictionary<string, List<string>>> MarkovDict { get; set; }
 
-        public Markov(DiscordSocketClient client)
+        public MarkovService(DiscordSocketClient client)
         {
             MarkovDict = new Dictionary<ulong, Dictionary<string, List<string>>>();
             _client = client;
+            _client.JoinedGuild += JoinedGuild;
             DeserializeDict();
         }
+
 
         public string GetChain(SocketGuild guild)
         {
@@ -68,6 +71,36 @@ namespace SteidanPrime.MarkovChain
                 else
                     MarkovDict[guild.Id] = new Dictionary<string, List<string>>();
             }
+        }
+
+        public Task ParseMarkovWords(string[] words, ulong guildId)
+        {
+            return Task.Run(() =>
+            {
+                for (int i = 0; i < words.Length - 2; i++)
+                {
+                    string key = words[i] + ' ' + words[i + 1];
+
+                    if (MarkovDict[guildId].ContainsKey(key))
+                    {
+                        MarkovDict[guildId][key].Add(words[i + 2]);
+                    }
+                    else
+                    {
+                        var v = new List<string> {words[i + 2]};
+                        MarkovDict[guildId][key] = v;
+                    }
+                }
+            });
+        }
+
+        private Task JoinedGuild(SocketGuild guild)
+        {
+            return Task.Run(() =>
+            {
+                if (MarkovDict.ContainsKey(guild.Id))
+                    MarkovDict[guild.Id] = new Dictionary<string, List<string>>();
+            });
         }
     }
 }

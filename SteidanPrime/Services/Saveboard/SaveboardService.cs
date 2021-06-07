@@ -2,13 +2,13 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace SteidanPrime.Saveboard
+namespace SteidanPrime.Services.Saveboard
 {
-    class Saveboard
+    public class SaveboardService
     {
         public Dictionary<ulong, ulong> SaveChannels { get; set; }
 
-        public Saveboard()
+        public SaveboardService()
         {
             DeserializeSaveboard();
         }

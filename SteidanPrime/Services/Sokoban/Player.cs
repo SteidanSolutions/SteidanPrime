@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    class Player
+    public class Player
     {
         public int X { get; set; }
         public int Y { get; set; }

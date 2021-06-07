@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    internal class Destination
+    public class Destination
     {
         public int X { get; set; }
         public int Y { get; set; }

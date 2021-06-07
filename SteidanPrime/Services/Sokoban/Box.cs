@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    internal class Box
+    public class Box
     {
         public int X { get; set; }
         public int Y { get; set; }

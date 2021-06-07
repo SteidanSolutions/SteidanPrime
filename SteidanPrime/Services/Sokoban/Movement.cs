@@ -1,6 +1,6 @@
-﻿namespace SteidanPrime.Sokoban
+﻿namespace SteidanPrime.Services.Sokoban
 {
-    internal enum Movement
+    public enum Movement
     {
         UP,
         RIGHT,

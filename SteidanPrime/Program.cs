@@ -2,14 +2,16 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
-using SteidanPrime.MarkovChain;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord.Addons.Interactive;
 using Microsoft.Extensions.DependencyInjection;
+using SteidanPrime.Services;
+using SteidanPrime.Services.Markov;
+using SteidanPrime.Services.Saveboard;
+using SteidanPrime.Services.Sokoban;
 
 namespace SteidanPrime
 {
@@ -21,10 +23,9 @@ namespace SteidanPrime
         private bool _stopBot = false;
         public CommandHandler CommandHandler;
         public LoggingService LoggingService;
+
         public static Settings Settings { get; set; }
-        public static Markov Markov { get; set; }
-        public static Sokoban.Game Sokoban { get; set; }
-        public static Saveboard.Saveboard Saveboard { get; set; }
+        //public static MarkovService MarkovService { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -49,10 +50,12 @@ namespace SteidanPrime
                 .AddSingleton<InteractiveService>()
                 .AddSingleton(_commands)
                 .AddSingleton<CommandHandler>()
+                .AddSingleton<MarkovService>()
+                .AddSingleton<SaveboardService>()
+                .AddSingleton<SokobanService>()
                 .BuildServiceProvider();
 
             _client.Ready += ClientReady;
-            _client.JoinedGuild += JoinedGuild;
 
             if (!Directory.Exists("Resources"))
                 Directory.CreateDirectory("Resources");
@@ -85,22 +88,16 @@ namespace SteidanPrime
         private async Task ClientReady()
         {
             await _client.SetGameAsync("Hello there");
-            Markov = new Markov(_client);
-            Sokoban = new Sokoban.Game();
-            Saveboard = new Saveboard.Saveboard();
+            _services.GetRequiredService<SaveboardService>().DeserializeSaveboard();
+            _services.GetRequiredService<MarkovService>().DeserializeDict();
+            _services.GetRequiredService<SokobanService>();
         }
 
-        private static void AutoSave(object source, ElapsedEventArgs e)
+        private void AutoSave(object source, ElapsedEventArgs e)
         {
-            Markov.SerializeDict();
-            Saveboard.SerializeSaveboard();
+            _services.GetRequiredService<MarkovService>().SerializeDict();
+            _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
             Console.WriteLine("Dictionaries auto-saved.");
-        }
-
-        private async Task JoinedGuild(SocketGuild Guild)
-        {
-            if (!Markov.MarkovDict.ContainsKey(Guild.Id))
-                Markov.MarkovDict[Guild.Id] = new Dictionary<string, List<string>>();
         }
 
         public async Task MainAsync()
@@ -146,8 +143,8 @@ namespace SteidanPrime
             switch (consoleInput)
             {
                 case "stop":
-                    Markov.SerializeDict();
-                    Saveboard.SerializeSaveboard();
+                    _services.GetRequiredService<MarkovService>().SerializeDict();
+                    _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
                     _stopBot = true;
                     break;
 
