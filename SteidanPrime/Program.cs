@@ -87,16 +87,19 @@ namespace SteidanPrime
 
         private async Task ClientReady()
         {
-            await _client.SetGameAsync("Hello there");
             _services.GetRequiredService<SaveboardService>().DeserializeSaveboard();
             _services.GetRequiredService<MarkovService>().DeserializeDict();
             _services.GetRequiredService<SokobanService>();
+            await _client.SetGameAsync(
+                $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
         }
 
-        private void AutoSave(object source, ElapsedEventArgs e)
+        private async void AutoSave(object source, ElapsedEventArgs e)
         {
             _services.GetRequiredService<MarkovService>().SerializeDict();
             _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
+            await _client.SetGameAsync(
+                $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
             Console.WriteLine("Dictionaries auto-saved.");
         }
 

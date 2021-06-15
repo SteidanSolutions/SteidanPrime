@@ -102,5 +102,19 @@ namespace SteidanPrime.Services.Markov
                     MarkovDict[guild.Id] = new Dictionary<string, List<string>>();
             });
         }
+
+        public ulong GetTotalWords()
+        {
+            ulong total = 0;
+            foreach (var dictionary in MarkovDict.Values)
+            {
+                foreach (var wordsList in dictionary.Values)
+                {
+                    total += (ulong) wordsList.Count;
+                }
+            }
+
+            return total;
+        }
     }
 }
