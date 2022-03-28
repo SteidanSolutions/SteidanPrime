@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using Newtonsoft.Json;
@@ -26,6 +27,43 @@ namespace SteidanPrime.Services.Markov
             var rand = new Random();
             Dictionary<string, List<string>> guildDict = MarkovDict[guild.Id];
             List<string> keys = new List<string>(guildDict.Keys);
+
+            var currentPair = keys[rand.Next(keys.Count)];
+            var message = currentPair;
+
+            while (!guildDict.ContainsKey(currentPair))
+                currentPair = keys[rand.Next(keys.Count)];
+
+            for (int i = 0; i < 20; i++)
+            {
+
+                if (!guildDict.ContainsKey(currentPair))
+                    break;
+
+                List<string> words = guildDict[currentPair];
+
+                string nextWord = words[rand.Next(words.Count)];
+
+                message += " " + nextWord;
+
+                string[] pairSplit = currentPair.Split(' ');
+                currentPair = pairSplit[1] + " " + nextWord;
+
+            }
+
+            return message;
+        }
+
+        public string GetChainWithSpecificWord(SocketGuild guild, string word)
+        {
+            var rand = new Random();
+            Dictionary<string, List<string>> guildDict = MarkovDict[guild.Id];
+            List<string> keys = new List<string>(guildDict.Keys);
+
+            keys = keys.Where(key => key.Contains(word)).ToList();
+
+            if (keys.Count == 0)
+                return "";
 
             var currentPair = keys[rand.Next(keys.Count)];
             var message = currentPair;

@@ -27,5 +27,24 @@ namespace SteidanPrime.Services.Markov
             string message = _markovService.GetChain(guild);
             await Context.Channel.SendMessageAsync(message);
         }
+
+        [Remarks("Invoked with ``chain <word>``, works the same as normal chain, but begins the chain with the specified word.")]
+        [Summary("Works the same as normal chain, but begins the chain with the specified word.")]
+        [Command("chain")]
+        public async Task PrintChain(string arg)
+        {
+            if (_markovService.MarkovDict[Context.Guild.Id].Keys.Count == 0)
+            {
+                await Context.Channel.SendMessageAsync("Type something first you cunt.");
+                return;
+            }
+
+            SocketGuild guild = Context.Guild;
+            string message = _markovService.GetChainWithSpecificWord(guild, arg);
+            if (message == "")
+                await Context.Channel.SendMessageAsync("Could not find a chain with the specified word.");
+            else
+                await Context.Channel.SendMessageAsync(message);
+        }
     }
 }
