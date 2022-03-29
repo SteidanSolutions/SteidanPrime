@@ -60,7 +60,7 @@ namespace SteidanPrime.Services.Markov
             Dictionary<string, List<string>> guildDict = MarkovDict[guild.Id];
             List<string> keys = new List<string>(guildDict.Keys);
 
-            keys = keys.Where(key => key.Contains(word)).ToList();
+            keys = keys.Where(key => key.Split(" ").Contains(word.ToLower())).ToList();
 
             if (keys.Count == 0)
                 return "";
