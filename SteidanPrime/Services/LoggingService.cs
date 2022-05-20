@@ -2,13 +2,14 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 
 namespace SteidanPrime.Services
 {
     public class LoggingService
     {
-        public LoggingService(DiscordSocketClient client, CommandService commands)
+        public LoggingService(DiscordSocketClient client, InteractionService commands)
         {
             client.Log += LogAsync;
             commands.Log += LogAsync;

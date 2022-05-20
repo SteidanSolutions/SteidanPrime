@@ -2,9 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using SteidanPrime.Services.Sokoban;
 
 namespace SteidanPrime.Services.Markov
 {
@@ -18,9 +22,36 @@ namespace SteidanPrime.Services.Markov
             MarkovDict = new Dictionary<ulong, Dictionary<string, List<string>>>();
             _client = client;
             _client.JoinedGuild += JoinedGuild;
+            _client.MessageReceived += HandleTextAsync;
             DeserializeDict();
         }
 
+        private Task HandleTextAsync(SocketMessage messageParam)
+        {
+            return Task.Run(async () =>
+            {
+                var message = messageParam as SocketUserMessage;
+                if (message == null) return;
+
+                var channel = message.Channel as SocketGuildChannel;
+                var guild = channel.Guild;
+
+                if (message.Author.IsBot)
+                    return;
+
+                if (message.Content.ToLower().Contains("madge"))
+                    await new SocketCommandContext(_client, message).Message.AddReactionAsync(
+                        Emote.Parse("<:Madge:788536698098810881>"));
+
+                string msg = message.ToString().Trim().ToLower();
+
+                msg = Regex.Replace(msg,
+                        @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
+                msg = Regex.Replace(msg, "[*\",_&^*\\-+.?;[\\]'/|\\\\`~{}]+", " ");
+                msg = Regex.Replace(msg, @"\s+", " ");
+                await ParseMarkovWords(msg.Split(' ', StringSplitOptions.RemoveEmptyEntries), guild.Id);
+            });
+        }
 
         public string GetChain(SocketGuild guild)
         {
@@ -136,7 +167,7 @@ namespace SteidanPrime.Services.Markov
         {
             return Task.Run(() =>
             {
-                if (MarkovDict.ContainsKey(guild.Id))
+                if (!MarkovDict.ContainsKey(guild.Id))
                     MarkovDict[guild.Id] = new Dictionary<string, List<string>>();
             });
         }

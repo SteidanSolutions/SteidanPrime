@@ -2,16 +2,17 @@
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Newtonsoft.Json;
 
 namespace SteidanPrime.Services.Markov
 {
-    [Group("Dictionary")]
+    [Group("dictionary", "Contains all the text data used for chain commands.")]
     [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     [RequireOwner(Group = "Permission")]
-    public class Dictionary : ModuleBase<SocketCommandContext>
+    public class Dictionary : InteractionModuleBase<SocketInteractionContext>
     {
+        public InteractionService Commands { get; set; }
         private readonly MarkovService _markovService;
 
         public Dictionary(MarkovService markovService)
@@ -19,9 +20,7 @@ namespace SteidanPrime.Services.Markov
             _markovService = markovService;
         }
 
-        [Remarks("Deletes everything from the Markov dictionary for this server in case you want to start fresh. Requires ``Administrator`` permission to use.")]
-        [Summary("Resets the current dictionary for Markov chain.")]
-        [Command("reset")]
+        [SlashCommand("reset", "Deletes everything from the Markov dictionary for this server. Requires ``Administrator`` to use.")]
         public async Task ResetDictionary()
         {
             ulong guildId = Context.Guild.Id;
@@ -31,12 +30,10 @@ namespace SteidanPrime.Services.Markov
             string markovJson = JsonConvert.SerializeObject(markovDictionary, Formatting.Indented);
             await File.WriteAllTextAsync("Resources/Dictionaries/" + guildId.ToString() + ".json", markovJson);
 
-            await Context.Channel.SendMessageAsync("Dictionary successfully reset.");
+            await RespondAsync("Dictionary successfully reset.");
         }
 
-        [Remarks("In case you want to see what's in the Markov dictionary for this server. Exports it as a json file in the same channel where the command is called. Requires ``Administrator`` permission to use.")]
-        [Summary("Exports the current Markov chain dictionary as a json file.")]
-        [Command("export")]
+        [SlashCommand("export", "Exports the current Markov chain dictionary as a json file.")]
         public async Task ExportDictionary()
         {
             ulong guildId = Context.Guild.Id;
@@ -48,9 +45,7 @@ namespace SteidanPrime.Services.Markov
             await Context.Channel.SendFileAsync("Resources/Dictionaries/" + guildId.ToString() + ".json");
         }
 
-        [Remarks("If you are experiencing issues with Markov, try reloading the dictionary, but it shouldn't be necessary. Requires ``Administrator`` permission to use.")]
-        [Summary("Reloads the current Markov chain dictionary in case of issues.")]
-        [Command("reload")]
+        [SlashCommand("reload", "Reloads the current Markov chain dictionary in case of issues.")]
         public async Task ReloadDictionary()
         {
             ulong guildId = Context.Guild.Id;
@@ -62,7 +57,7 @@ namespace SteidanPrime.Services.Markov
                 dictionary = new Dictionary<string, List<string>>();
 
             _markovService.MarkovDict[guildId] = dictionary;
-            await Context.Channel.SendMessageAsync("Dictionary successfully reloaded.");
+            await RespondAsync("Dictionary successfully reloaded.");
         }
     }
 }

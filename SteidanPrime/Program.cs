@@ -4,9 +4,10 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using Discord.Addons.Interactive;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using SteidanPrime.Services;
 using SteidanPrime.Services.Markov;
@@ -18,14 +19,11 @@ namespace SteidanPrime
     class Program
     {
         private readonly DiscordSocketClient _client;
-        private readonly CommandService _commands;
         private readonly IServiceProvider _services;
+        private InteractionService _commands;
         private bool _stopBot = false;
-        public CommandHandler CommandHandler;
         public LoggingService LoggingService;
-
         public static Settings Settings { get; set; }
-        //public static MarkovService MarkovService { get; set; }
 
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -37,22 +35,18 @@ namespace SteidanPrime
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
-            });
-
-            _commands = new CommandService(new CommandServiceConfig
-            {
-                LogLevel = LogSeverity.Debug,
-                CaseSensitiveCommands = false              
+                GatewayIntents = Discord.GatewayIntents.All,
+                AlwaysDownloadUsers = true,
+                LogGatewayIntentWarnings = false
             });
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
-                .AddSingleton<InteractiveService>()
-                .AddSingleton(_commands)
-                .AddSingleton<CommandHandler>()
                 .AddSingleton<MarkovService>()
                 .AddSingleton<SaveboardService>()
                 .AddSingleton<SokobanService>()
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+                .AddSingleton<InteractionHandler>()
                 .BuildServiceProvider();
 
             _client.Ready += ClientReady;
@@ -92,6 +86,12 @@ namespace SteidanPrime
             _services.GetRequiredService<SokobanService>();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
+
+            await _services.GetRequiredService<InteractionHandler>().InitializeAsync();
+
+            await _commands.RegisterCommandsGloballyAsync(true);
+            //await _commands.RegisterCommandsToGuildAsync(149871097452429312, true);
+            //await _commands.RegisterCommandsToGuildAsync(102375147515699200, true);
         }
 
         private async void AutoSave(object source, ElapsedEventArgs e)
@@ -105,11 +105,8 @@ namespace SteidanPrime
 
         public async Task MainAsync()
         {
+            _commands = _services.GetRequiredService<InteractionService>();
             Settings = JsonConvert.DeserializeObject<Settings>(await File.ReadAllTextAsync("Resources/config.json"));
-
-            CommandHandler = new CommandHandler(_client, _commands, _services, Settings.CommandPrefix);
-            await CommandHandler.InstallCommandsAsync();
-
             LoggingService = new LoggingService(_client, _commands);
 
             try
