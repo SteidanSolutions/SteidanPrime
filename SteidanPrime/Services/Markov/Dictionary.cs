@@ -8,8 +8,7 @@ using Newtonsoft.Json;
 namespace SteidanPrime.Services.Markov
 {
     [Group("dictionary", "Contains all the text data used for chain commands.")]
-    [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-    [RequireOwner(Group = "Permission")]
+    [DefaultMemberPermissions(GuildPermission.Administrator)]
     public class Dictionary : InteractionModuleBase<SocketInteractionContext>
     {
         public InteractionService Commands { get; set; }
@@ -42,7 +41,7 @@ namespace SteidanPrime.Services.Markov
             string markovJson = JsonConvert.SerializeObject(dictionary, Formatting.Indented);
             await File.WriteAllTextAsync("Resources/Dictionaries/" + guildId.ToString() + ".json", markovJson);
 
-            await Context.Channel.SendFileAsync("Resources/Dictionaries/" + guildId.ToString() + ".json");
+            await RespondWithFileAsync("Resources/Dictionaries/" + guildId.ToString() + ".json");
         }
 
         [SlashCommand("reload", "Reloads the current Markov chain dictionary in case of issues.")]
