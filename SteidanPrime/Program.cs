@@ -8,6 +8,7 @@ using System.Timers;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using SteidanPrime.Services;
+using SteidanPrime.Services.Gambling;
 using SteidanPrime.Services.Markov;
 using SteidanPrime.Services.Saveboard;
 using SteidanPrime.Services.Sokoban;
@@ -43,6 +44,7 @@ namespace SteidanPrime
                 .AddSingleton<MarkovService>()
                 .AddSingleton<SaveboardService>()
                 .AddSingleton<SokobanService>()
+                .AddSingleton<GamblingService>()
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
                 .AddSingleton<InteractionHandler>()
                 .BuildServiceProvider();
@@ -82,6 +84,7 @@ namespace SteidanPrime
             _services.GetRequiredService<SaveboardService>().DeserializeSaveboard();
             _services.GetRequiredService<MarkovService>().DeserializeDict();
             _services.GetRequiredService<SokobanService>();
+            _services.GetRequiredService<GamblingService>().DeserializePlayers();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
 
@@ -97,6 +100,7 @@ namespace SteidanPrime
         {
             _services.GetRequiredService<MarkovService>().SerializeDict();
             _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
+            _services.GetRequiredService<GamblingService>().SerializePlayers();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
             Console.WriteLine("Dictionaries auto-saved.");
@@ -144,6 +148,7 @@ namespace SteidanPrime
                 case "stop":
                     _services.GetRequiredService<MarkovService>().SerializeDict();
                     _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
+                    _services.GetRequiredService<GamblingService>().SerializePlayers();
                     _stopBot = true;
                     break;
 
