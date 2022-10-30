@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 
@@ -20,6 +17,9 @@ namespace SteidanPrime.Services.Sokoban
 
         public async Task SokobanButtonHandler(SocketMessageComponent component)
         {
+            if (component.User.Id != component.Message.Interaction.User.Id)
+                return;
+
             if (!component.HasResponded)
             {
                 var wonComponents = new ComponentBuilder()
@@ -113,10 +113,10 @@ namespace SteidanPrime.Services.Sokoban
             }
         }
 
-        public async Task<(Embed, bool)> NewGameAsync(SocketInteractionContext context)
+        public async Task<(Embed, bool)> NewGameAsync(ulong userId)
         {
-            SokobanGameDictionary[context.User.Id] = new Game();
-            return await GetGameEmbed(context);
+            SokobanGameDictionary[userId] = new Game();
+            return await GetGameEmbed(userId);
         }
 
         public async Task<Embed> StopGame(ulong userId)
@@ -131,9 +131,9 @@ namespace SteidanPrime.Services.Sokoban
             return await SokobanGameDictionary[userId].ContinueGame();
         }
 
-        public async Task<(Embed, bool)> GetGameEmbed(SocketInteractionContext context)
+        public async Task<(Embed, bool)> GetGameEmbed(ulong userId)
         {
-            return await SokobanGameDictionary[context.User.Id].GetGameEmbed();
+            return await SokobanGameDictionary[userId].GetGameEmbed();
         }
     }
 }

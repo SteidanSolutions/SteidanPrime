@@ -1,10 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
-using Discord.Interactions;
 using Discord.Rest;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SteidanPrime.Services.Sokoban
 {

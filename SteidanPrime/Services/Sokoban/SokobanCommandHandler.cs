@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 
@@ -18,7 +17,7 @@ namespace SteidanPrime.Services.Sokoban
         [SlashCommand("play", "play gaem")]
         public async Task StartGame()
         {
-            (Embed, bool) embed = await _sokobanService.NewGameAsync(Context);
+            (Embed, bool) embed = await _sokobanService.NewGameAsync(Context.User.Id);
             await RespondAsync(embed:embed.Item1,
                 components: new ComponentBuilder().WithButton("          ", "btnEmptyL", ButtonStyle.Secondary, disabled:true)
                     .WithButton(null, "btnUp", ButtonStyle.Secondary, Emoji.Parse(":arrow_up:"))
