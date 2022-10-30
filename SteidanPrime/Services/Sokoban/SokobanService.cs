@@ -1,6 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
+using Discord.Interactions;
+using Discord.WebSocket;
 
 namespace SteidanPrime.Services.Sokoban
 {
@@ -8,30 +13,127 @@ namespace SteidanPrime.Services.Sokoban
     {
         public Dictionary<ulong, Game> SokobanGameDictionary = new Dictionary<ulong, Game>();
 
-        public async Task NewGameAsync(SocketCommandContext context)
+        public SokobanService(DiscordSocketClient client)
         {
-            SokobanGameDictionary[context.Guild.Id] = new Game();
-            await SendGameEmbed(context);
+            client.ButtonExecuted += SokobanButtonHandler;
         }
 
-        public void StopGame(SocketCommandContext context)
+        public async Task SokobanButtonHandler(SocketMessageComponent component)
         {
-            SokobanGameDictionary.Remove(context.Guild.Id);
+            if (!component.HasResponded)
+            {
+                var wonComponents = new ComponentBuilder()
+                    .WithButton("          ", "btnEmptyL", ButtonStyle.Secondary, disabled: true)
+                    .WithButton(null, "btnUp", ButtonStyle.Secondary, Emoji.Parse(":arrow_up:"), disabled: true)
+                    .WithButton("          ", "btnEmptyR", ButtonStyle.Secondary, disabled: true)
+                    .WithButton("Reset", "btnReset", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Stop", "btnStop", ButtonStyle.Danger)
+                    .WithButton(null, "btnLeft", ButtonStyle.Secondary, Emoji.Parse(":arrow_left:"), disabled: true, row: 1)
+                    .WithButton(null, "btnDown", ButtonStyle.Secondary, Emoji.Parse(":arrow_down:"), disabled: true, row: 1)
+                    .WithButton(null, "btnRight", ButtonStyle.Secondary, Emoji.Parse(":arrow_right:"), disabled: true, row: 1)
+                    .WithButton("Next level", "btnNextLevel", ButtonStyle.Success, row: 1).Build();
+
+                switch (component.Data.CustomId)
+                {
+                    case "btnUp":
+                        var embedResultUp = SokobanGameDictionary[component.User.Id].MovePlayerAsync(Movement.UP).Result;
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = embedResultUp.Item1;
+                            if (embedResultUp.Item2) x.Components = wonComponents;
+                        });
+                        break;
+                    case "btnLeft":
+                        var embedResultLeft = SokobanGameDictionary[component.User.Id].MovePlayerAsync(Movement.LEFT).Result;
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = embedResultLeft.Item1;
+                            if (embedResultLeft.Item2) x.Components = wonComponents;
+                        });
+                        break;
+                    case "btnDown":
+                        var embedResultDown = SokobanGameDictionary[component.User.Id].MovePlayerAsync(Movement.DOWN).Result;
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = embedResultDown.Item1;
+                            if (embedResultDown.Item2) x.Components = wonComponents;
+                        });
+                        break;
+                    case "btnRight":
+                        var embedResultRight = SokobanGameDictionary[component.User.Id].MovePlayerAsync(Movement.RIGHT).Result;
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = embedResultRight.Item1;
+                            if (embedResultRight.Item2) x.Components = wonComponents;
+                        });
+                        break;
+                    case "btnReset":
+                        var embedResultReset = SokobanGameDictionary[component.User.Id].MovePlayerAsync(Movement.RESET).Result;
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = embedResultReset.Item1;
+                            if (embedResultReset.Item2) x.Components = wonComponents;
+                        });
+                        break;
+                    case "btnNextLevel":
+                        await component.UpdateAsync(async x =>
+                        {
+                            x.Embed = ContinueGame(component.User.Id).Result.Item1;
+                            x.Components = new ComponentBuilder().WithButton("          ", "btnEmptyL",
+                                    ButtonStyle.Secondary, disabled: true)
+                                .WithButton(null, "btnUp", ButtonStyle.Secondary, Emoji.Parse(":arrow_up:"))
+                                .WithButton("          ", "btnEmptyR", ButtonStyle.Secondary, disabled: true)
+                                .WithButton("Reset", "btnReset", ButtonStyle.Primary)
+                                .WithButton("Stop", "btnStop", ButtonStyle.Danger)
+                                .WithButton(null, "btnLeft", ButtonStyle.Secondary, Emoji.Parse(":arrow_left:"), row: 1)
+                                .WithButton(null, "btnDown", ButtonStyle.Secondary, Emoji.Parse(":arrow_down:"), row: 1)
+                                .WithButton(null, "btnRight", ButtonStyle.Secondary, Emoji.Parse(":arrow_right:"),
+                                    row: 1)
+                                .WithButton("Next level", "btnNextLevel", ButtonStyle.Success, disabled: true, row: 1)
+                                .Build();
+                        });
+                        break;
+                    case "btnStop":
+                        await component.UpdateAsync(async x =>
+                        {
+                            x.Embed = StopGame(component.User.Id).Result;
+                            x.Components = new ComponentBuilder()
+                                .WithButton("          ", "btnEmptyL", ButtonStyle.Secondary, disabled: true)
+                                .WithButton(null, "btnUp", ButtonStyle.Secondary, Emoji.Parse(":arrow_up:"), disabled: true)
+                                .WithButton("          ", "btnEmptyR", ButtonStyle.Secondary, disabled: true)
+                                .WithButton("Reset", "btnReset", ButtonStyle.Primary, disabled: true)
+                                .WithButton("Stop", "btnStop", ButtonStyle.Danger, disabled: true)
+                                .WithButton(null, "btnLeft", ButtonStyle.Secondary, Emoji.Parse(":arrow_left:"), disabled: true, row: 1)
+                                .WithButton(null, "btnDown", ButtonStyle.Secondary, Emoji.Parse(":arrow_down:"), disabled: true, row: 1)
+                                .WithButton(null, "btnRight", ButtonStyle.Secondary, Emoji.Parse(":arrow_right:"), disabled: true, row: 1)
+                                .WithButton("Next level", "btnNextLevel", ButtonStyle.Success, disabled: true, row: 1).Build();
+                        });
+                        break;
+                }
+            }
         }
 
-        public async Task ContinueGame(SocketCommandContext context)
+        public async Task<(Embed, bool)> NewGameAsync(SocketInteractionContext context)
         {
-            await SokobanGameDictionary[context.Guild.Id].ContinueGame(context);
+            SokobanGameDictionary[context.User.Id] = new Game();
+            return await GetGameEmbed(context);
         }
 
-        public async Task SendGameEmbed(SocketCommandContext context)
+        public async Task<Embed> StopGame(ulong userId)
         {
-            await SokobanGameDictionary[context.Guild.Id].SendGameEmbed(context);
+            var embed = await SokobanGameDictionary[userId].StopGameEmbed();
+            SokobanGameDictionary.Remove(userId);
+            return embed;
         }
 
-        public async Task ParseInput(SocketCommandContext context)
+        public async Task<(Embed, bool)> ContinueGame(ulong userId)
         {
-            await SokobanGameDictionary[context.Guild.Id].ParseInput(context);
+            return await SokobanGameDictionary[userId].ContinueGame();
+        }
+
+        public async Task<(Embed, bool)> GetGameEmbed(SocketInteractionContext context)
+        {
+            return await SokobanGameDictionary[context.User.Id].GetGameEmbed();
         }
     }
 }

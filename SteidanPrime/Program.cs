@@ -92,6 +92,7 @@ namespace SteidanPrime
             await _commands.RegisterCommandsGloballyAsync(true);
             //await _commands.RegisterCommandsToGuildAsync(149871097452429312, true);
             //await _commands.RegisterCommandsToGuildAsync(102375147515699200, true);
+            //await _commands.RegisterCommandsToGuildAsync(1035712010836516925, true);
         }
 
         private async void AutoSave(object source, ElapsedEventArgs e)

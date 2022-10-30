@@ -34,7 +34,7 @@ namespace SteidanPrime.Services
             _commands.ComponentCommandExecuted += ComponentCommandExecuted;
         }
 
-        private async Task ComponentCommandExecuted(ComponentCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
+        private static async Task ComponentCommandExecuted(ComponentCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
         {
             if (!arg3.IsSuccess)
             {
@@ -43,9 +43,9 @@ namespace SteidanPrime.Services
                     case InteractionCommandError.UnmetPrecondition:
                         await arg2.Interaction.RespondAsync($"Unmet Precondition: {arg3.ErrorReason}");
                         break;
-                    case InteractionCommandError.UnknownCommand:
-                        await arg2.Interaction.RespondAsync("Unknown command");
-                        break;
+                    //case InteractionCommandError.UnknownCommand:
+                    //    await arg2.Interaction.RespondAsync("Unknown command");
+                    //    break;
                     case InteractionCommandError.BadArgs:
                         await arg2.Interaction.RespondAsync("Invalid number of arguments");
                         break;
