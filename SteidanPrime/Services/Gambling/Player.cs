@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
 
@@ -11,12 +12,9 @@ namespace SteidanPrime.Services.Gambling
         public int BlackjackWins { get; set; } = 0;
         public int BlackjackLosses { get; set; } = 0;
         public bool CurrentlyPlayingBlackjack { get; set; } = false;
-        public Stopwatch TimeUntilPayday { get; set; } = new Stopwatch();
+        public long LastPaydayTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public List<int> Hand = new List<int>();
 
-        public Player()
-        {
-            TimeUntilPayday.Start();
-        }
+        public Player() {}
     }
 }
