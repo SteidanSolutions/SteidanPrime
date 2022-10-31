@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 
 namespace SteidanPrime.Services.Gambling
@@ -9,8 +10,7 @@ namespace SteidanPrime.Services.Gambling
     [Group("gambling", "Gambling stuff.")]
     public class GamblingCommandHandler : InteractionModuleBase<SocketInteractionContext>
     {
-        //private readonly int PaydayCooldown = 3600000;
-        private readonly int PaydayCooldown = 5000;
+        private readonly int PaydayCooldown = 3600000;
         private readonly int VergilBucksPerPayday = 200;
         private readonly GamblingService _gamblingService;
 
@@ -24,7 +24,7 @@ namespace SteidanPrime.Services.Gambling
         {
             if (!_gamblingService.Players.ContainsKey(Context.User.Id))
             {
-                await RespondAsync("You don't have a bank account open yet! Type ``/gambling register`` to open one.");
+                await RespondAsync("You don't have a bank account open yet! Type ``/gambling register`` to open one.", ephemeral: true);
                 return;
             }
 
@@ -34,12 +34,12 @@ namespace SteidanPrime.Services.Gambling
                 player.VergilBucks += VergilBucksPerPayday;
                 player.TimeUntilPayday.Restart();
                 await RespondAsync(
-                    $"You got paid {VergilBucksPerPayday} Vbucks (Vergil bucks)! Your current balance is {player.VergilBucks}.");
+                    $"You got paid {VergilBucksPerPayday} Vbucks (Vergil bucks)! Your current balance is {player.VergilBucks}.", ephemeral: true);
             }
             else
             {
                 await RespondAsync(
-                    $"It's too early for your payday! You can get paid in ``{(PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 60000}`` minutes and ``{((PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 1000) % 60}`` seconds.");
+                    $"It's too early for your payday! You can get paid in ``{(PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 60000}`` minutes and ``{((PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 1000) % 60}`` seconds.", ephemeral: true);
             }
         }
 
@@ -51,7 +51,7 @@ namespace SteidanPrime.Services.Gambling
                 await RespondAsync($"Your current balance of Vbucks (Vergil bucks) is ``{_gamblingService.Players[Context.User.Id].VergilBucks}``");
                 return;
             }
-            await RespondAsync("You don't have a bank account open yet! Type ``/gambling register`` to open one.");
+            await RespondAsync("You don't have a bank account open yet! Type ``/gambling register`` to open one.", ephemeral: true);
         }
 
         [SlashCommand("register",
@@ -62,12 +62,32 @@ namespace SteidanPrime.Services.Gambling
             {
                 _gamblingService.Players.Add(Context.User.Id, new Player());
                 await RespondAsync(
-                    $"You have successfully opened an account with Devil May Bank! Explore our options (slash commands) to receive and use Vbucks (Vergil bucks).");
+                    $"You have successfully opened an account with Devil May Bank! Explore our options (slash commands) to receive and use Vbucks (Vergil bucks).", ephemeral: true);
             }
             else
             {
-                await RespondAsync("You already have an account with our bank!");
+                await RespondAsync("You already have an account with our bank!", ephemeral: true);
             }
+        }
+
+        [SlashCommand("blackjack", "Begins a new or resumes the previous game of blackjack.")]
+        public async Task Blackjack()
+        {
+            var embed = new EmbedBuilder()
+            {
+                Title = "Blackjack",
+                Description = "```\n        DEALER        \n```" + ":black_large_square::black_large_square::regional_indicator_a::black_large_square::five::black_large_square::regional_indicator_j::black_large_square::black_large_square::black_large_square:\n" +
+                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
+                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
+                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
+                              ":black_large_square::black_large_square::three::black_large_square::regional_indicator_a::black_large_square::four::black_large_square::black_large_square::black_large_square:" +
+                              "```\n         YOU        \n```"
+            };
+            await RespondAsync(embed: embed.Build(),
+                components: new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
+                    .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                    .WithButton("Split", "btnSplit", ButtonStyle.Secondary)
+                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build());
         }
     }
 }
