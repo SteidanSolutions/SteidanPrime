@@ -10,7 +10,7 @@ namespace SteidanPrime.Services.Gambling
     [Group("gambling", "Gambling stuff.")]
     public class GamblingCommandHandler : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly int PaydayCooldown = 3600000;
+        private readonly int _paydayCooldownMilliseconds = 60000;
         private readonly int VergilBucksPerPayday = 200;
         private readonly GamblingService _gamblingService;
 
@@ -29,17 +29,18 @@ namespace SteidanPrime.Services.Gambling
             }
 
             var player = _gamblingService.Players[Context.User.Id];
-            if (player.TimeUntilPayday.ElapsedMilliseconds >= PaydayCooldown)
+            var currentTimeInMilliseconds = Context.Interaction.CreatedAt.ToUnixTimeMilliseconds();
+            if ((currentTimeInMilliseconds - _paydayCooldownMilliseconds) >= player.LastPaydayTime)
             {
                 player.VergilBucks += VergilBucksPerPayday;
-                player.TimeUntilPayday.Restart();
+                player.LastPaydayTime = currentTimeInMilliseconds;
                 await RespondAsync(
                     $"You got paid {VergilBucksPerPayday} Vbucks (Vergil bucks)! Your current balance is {player.VergilBucks}.", ephemeral: true);
             }
             else
             {
                 await RespondAsync(
-                    $"It's too early for your payday! You can get paid in ``{(PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 60000}`` minutes and ``{((PaydayCooldown - player.TimeUntilPayday.ElapsedMilliseconds) / 1000) % 60}`` seconds.", ephemeral: true);
+                    $"It's too early for your payday! You can get paid in ``{Math.Abs(currentTimeInMilliseconds - player.LastPaydayTime - _paydayCooldownMilliseconds)/60000}`` minutes and ``{Math.Abs((currentTimeInMilliseconds - player.LastPaydayTime - _paydayCooldownMilliseconds) /1000) % 60}`` seconds.", ephemeral: true);
             }
         }
 
