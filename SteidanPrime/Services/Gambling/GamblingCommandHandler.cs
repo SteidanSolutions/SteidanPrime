@@ -10,7 +10,7 @@ namespace SteidanPrime.Services.Gambling
     [Group("gambling", "Gambling stuff.")]
     public class GamblingCommandHandler : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly int _paydayCooldownMilliseconds = 60000;
+        private readonly int _paydayCooldownMilliseconds = 3600000;
         private readonly int VergilBucksPerPayday = 200;
         private readonly GamblingService _gamblingService;
 
