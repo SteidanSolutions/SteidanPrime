@@ -102,7 +102,7 @@ namespace SteidanPrime
             _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
             _services.GetRequiredService<GamblingService>().SerializePlayers();
             await _client.SetGameAsync(
-                $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
+                $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains");
             Console.WriteLine("Dictionaries auto-saved.");
         }
 
