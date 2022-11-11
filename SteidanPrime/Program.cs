@@ -83,6 +83,7 @@ namespace SteidanPrime
         {
             _services.GetRequiredService<SaveboardService>().DeserializeSaveboard();
             _services.GetRequiredService<MarkovService>().DeserializeDict();
+            _services.GetRequiredService<MarkovService>().FixMissingDictionaries();
             _services.GetRequiredService<SokobanService>();
             _services.GetRequiredService<GamblingService>().DeserializePlayers();
             await _client.SetGameAsync(

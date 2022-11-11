@@ -185,5 +185,14 @@ namespace SteidanPrime.Services.Markov
 
             return total;
         }
+
+        public void FixMissingDictionaries()
+        {
+            foreach (var guild in _client.Guilds)
+            {
+                if (!MarkovDict.ContainsKey(guild.Id))
+                    MarkovDict[guild.Id] = new Dictionary<string, List<string>>();
+            }
+        }
     }
 }
