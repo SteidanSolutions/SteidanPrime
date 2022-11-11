@@ -43,13 +43,27 @@ namespace SteidanPrime.Services.Markov
                     await new SocketCommandContext(_client, message).Message.AddReactionAsync(
                         Emote.Parse("<:Madge:788536698098810881>"));
 
-                string msg = message.ToString().Trim().ToLower();
+                var msg = message.ToString().Trim().ToLower();
 
                 msg = Regex.Replace(msg,
                         @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
                 msg = Regex.Replace(msg, "[*\",_&^*\\-+.?;[\\]'/|\\\\`~{}]+", " ");
                 msg = Regex.Replace(msg, @"\s+", " ");
                 await ParseMarkovWords(msg.Split(' ', StringSplitOptions.RemoveEmptyEntries), guild.Id);
+            });
+        }
+
+        public Task HandleTextAsync(string message, ulong guildId)
+        {
+            return Task.Run(async () =>
+            {
+                var msg = message.ToString().Trim().ToLower();
+
+                msg = Regex.Replace(msg,
+                    @"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?", " ");
+                msg = Regex.Replace(msg, "[*\",_&^*\\-+.?;[\\]'/|\\\\`~{}]+", " ");
+                msg = Regex.Replace(msg, @"\s+", " ");
+                await ParseMarkovWords(msg.Split(' ', StringSplitOptions.RemoveEmptyEntries), guildId);
             });
         }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -57,6 +58,23 @@ namespace SteidanPrime.Services.Markov
 
             _markovService.MarkovDict[guildId] = dictionary;
             await RespondAsync("Dictionary successfully reloaded.");
+        }
+
+        [SlashCommand("generate",
+            "Scans last N words in this channel. WARNING: using this can inflate the number of words.")]
+        public async Task GenerateDictionary([Summary("numberOfMessages")] int arg = 10)
+        {
+            await DeferAsync();
+            var messages = Context.Channel.GetMessagesAsync(Context.Interaction.Id, Direction.Before, arg, CacheMode.AllowDownload, RequestOptions.Default).FlattenAsync().Result;
+            foreach (var message in messages)
+            {
+                if (message.Author.IsBot)
+                    continue;
+
+                await _markovService.HandleTextAsync(message.Content, Context.Guild.Id);
+            }
+
+            await FollowupAsync($"Successfully scanned {messages.Count()} messages.");
         }
     }
 }
