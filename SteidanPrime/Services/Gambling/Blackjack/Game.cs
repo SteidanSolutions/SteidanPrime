@@ -82,7 +82,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
                     tempPlayerCards[i] = 10;
             }
 
-            if (tempDealerCards.Sum() < 17)
+            if (tempDealerCards.Sum() <= 17)
             {
                 for (int i = 0; i < tempDealerCards.Count; i++)
                 {

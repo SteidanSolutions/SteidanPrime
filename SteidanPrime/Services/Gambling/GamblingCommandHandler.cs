@@ -78,11 +78,19 @@ namespace SteidanPrime.Services.Gambling
         [SlashCommand("blackjack", "Begins a new or resumes the previous game of blackjack.")]
         public async Task Blackjack(double bet)
         {
-            Embed embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result.Item1;
-            await RespondAsync(embed: embed,
-                components: new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
-                    .WithButton("Stand", "btnStand", ButtonStyle.Primary)
-                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build());
+            if (!_gamblingService.Players.ContainsKey(Context.User.Id))
+            {
+                await RespondAsync(
+                    $"You must register using the ``/gambling register`` command before you can gamble.", ephemeral: true);
+            }
+            else
+            {
+                Embed embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result.Item1;
+                await RespondAsync(embed: embed,
+                    components: new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
+                        .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                        .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build());
+            }
         }
 
         [SlashCommand("stats", "Gets your stats for gambling.")]
