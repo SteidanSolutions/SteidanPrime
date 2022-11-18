@@ -11,7 +11,7 @@ namespace SteidanPrime.Services.Gambling
     public class GamblingCommandHandler : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly int _paydayCooldownMilliseconds = 3600000;
-        private readonly int VergilBucksPerPayday = 200;
+        private readonly int _vergilBucksPerPayday = 200;
         private readonly GamblingService _gamblingService;
 
         public GamblingCommandHandler(GamblingService gamblingService)
@@ -32,10 +32,10 @@ namespace SteidanPrime.Services.Gambling
             var currentTimeInMilliseconds = Context.Interaction.CreatedAt.ToUnixTimeMilliseconds();
             if ((currentTimeInMilliseconds - _paydayCooldownMilliseconds) >= player.LastPaydayTime)
             {
-                player.VergilBucks += VergilBucksPerPayday;
+                player.VergilBucks += _vergilBucksPerPayday;
                 player.LastPaydayTime = currentTimeInMilliseconds;
                 await RespondAsync(
-                    $"You got paid {VergilBucksPerPayday} Vbucks (Vergil bucks)! Your current balance is {player.VergilBucks}.", ephemeral: true);
+                    $"You got paid {_vergilBucksPerPayday} Vbucks (Vergil bucks)! Your current balance is {player.VergilBucks}.", ephemeral: true);
             }
             else
             {
@@ -61,7 +61,11 @@ namespace SteidanPrime.Services.Gambling
         {
             if (!_gamblingService.Players.ContainsKey(Context.User.Id))
             {
-                _gamblingService.Players.Add(Context.User.Id, new Player());
+                var player = new Player
+                {
+                    Id = Context.User.Id
+                };
+                _gamblingService.Players.Add(Context.User.Id, player);
                 await RespondAsync(
                     $"You have successfully opened an account with Devil May Bank! Explore our options (slash commands) to receive and use Vbucks (Vergil bucks).", ephemeral: true);
             }
@@ -72,23 +76,25 @@ namespace SteidanPrime.Services.Gambling
         }
 
         [SlashCommand("blackjack", "Begins a new or resumes the previous game of blackjack.")]
-        public async Task Blackjack()
+        public async Task Blackjack(double bet)
         {
-            var embed = new EmbedBuilder()
-            {
-                Title = "Blackjack",
-                Description = "```\n        DEALER        \n```" + ":black_large_square::black_large_square::regional_indicator_a::black_large_square::five::black_large_square::regional_indicator_j::black_large_square::black_large_square::black_large_square:\n" +
-                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
-                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
-                              ":black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square::black_large_square:\n" +
-                              ":black_large_square::black_large_square::three::black_large_square::regional_indicator_a::black_large_square::four::black_large_square::black_large_square::black_large_square:" +
-                              "```\n         YOU        \n```"
-            };
-            await RespondAsync(embed: embed.Build(),
+            Embed embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result.Item1;
+            await RespondAsync(embed: embed,
                 components: new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary)
-                    .WithButton("Split", "btnSplit", ButtonStyle.Secondary)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build());
+        }
+
+        [SlashCommand("stats", "Gets your stats for gambling.")]
+        public async Task Stats()
+        {
+            var player = _gamblingService.Players[Context.User.Id];
+            await RespondAsync($"```Your stats for gambling are:\n" +
+                               $"Blackjacks: {player.Blackjacks}\n" +
+                               $"Blackjack Wins: {player.BlackjackWins}\n" +
+                               $"Blackjack Losses: {player.BlackjackLosses}\n" +
+                               $"Blackjack Stand-offs: {player.BlackjackStandOffs}\n" +
+                               $"Blackjack Pushes: {player.BlackjackPushes}```");
         }
     }
 }

@@ -76,7 +76,7 @@ namespace SteidanPrime.Services.Sokoban
                         });
                         break;
                     case "btnNextLevel":
-                        await component.UpdateAsync(async x =>
+                        await component.UpdateAsync(x =>
                         {
                             x.Embed = ContinueGame(component.User.Id).Result.Item1;
                             x.Components = new ComponentBuilder().WithButton("          ", "btnEmptyL",
@@ -94,7 +94,7 @@ namespace SteidanPrime.Services.Sokoban
                         });
                         break;
                     case "btnStop":
-                        await component.UpdateAsync(async x =>
+                        await component.UpdateAsync(x =>
                         {
                             x.Embed = StopGame(component.User.Id).Result;
                             x.Components = new ComponentBuilder()

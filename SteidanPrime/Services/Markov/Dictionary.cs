@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -8,8 +9,9 @@ using Newtonsoft.Json;
 
 namespace SteidanPrime.Services.Markov
 {
-    [Group("dictionary", "Contains all the text data used for chain commands.")]
-    [DefaultMemberPermissions(GuildPermission.Administrator)]
+    [Group("dictionary", "Contains all the text data used for chain commands. Requires ``Administrator`` to use.")]
+    [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+    [RequireOwner(Group = "Permission")]
     public class Dictionary : InteractionModuleBase<SocketInteractionContext>
     {
         public InteractionService Commands { get; set; }
@@ -20,7 +22,7 @@ namespace SteidanPrime.Services.Markov
             _markovService = markovService;
         }
 
-        [SlashCommand("reset", "Deletes everything from the Markov dictionary for this server. Requires ``Administrator`` to use.")]
+        [SlashCommand("reset", "Deletes everything from the Markov dictionary for this server.")]
         public async Task ResetDictionary()
         {
             ulong guildId = Context.Guild.Id;
