@@ -1,9 +1,4 @@
-﻿using SteidanPrime.Services.Sokoban;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SteidanPrime.Services.Gambling.Blackjack
+﻿namespace SteidanPrime.Services.Gambling.Blackjack
 {
     public class Tile
     {
@@ -29,6 +24,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
                 8 => ":eight:",
                 9 => ":nine:",
                 10 => ":keycap_ten:",
+                11 => ":regional_indicator_a:",
                 12 => ":regional_indicator_j:",
                 13 => ":regional_indicator_q:",
                 14 => ":regional_indicator_k:",

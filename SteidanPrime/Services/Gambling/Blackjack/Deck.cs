@@ -14,7 +14,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
             for (var i = 0; i < 4; i++)
                 for (var j = 1; j < 15; j++)
                     Cards.Add(j);
-            Cards.RemoveAll(x => x == 11);
+            Cards.RemoveAll(x => x == 1);
         }
 
         public void ShuffleDeck()

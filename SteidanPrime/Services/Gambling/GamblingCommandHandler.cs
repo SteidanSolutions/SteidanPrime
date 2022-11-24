@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using SteidanPrime.Services.Gambling.Blackjack;
 
 namespace SteidanPrime.Services.Gambling
 {
@@ -76,8 +75,10 @@ namespace SteidanPrime.Services.Gambling
         }
 
         [SlashCommand("blackjack", "Begins a new or resumes the previous game of blackjack.")]
-        public async Task Blackjack(double bet)
+        public async Task Blackjack([MinValue(0)] double bet)
         {
+            var player = _gamblingService.Players[Context.User.Id];
+
             if (!_gamblingService.Players.ContainsKey(Context.User.Id))
             {
                 await RespondAsync(
@@ -85,11 +86,29 @@ namespace SteidanPrime.Services.Gambling
             }
             else
             {
-                Embed embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result.Item1;
-                await RespondAsync(embed: embed,
-                    components: new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
-                        .WithButton("Stand", "btnStand", ButtonStyle.Primary)
-                        .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build());
+                if (bet > player.VergilBucks)
+                {
+                    await RespondAsync(
+                        $"You cannot bet ``{bet}`` Vergil bucks as you only have ``{player.VergilBucks}``. Place a lower bet or get a loan.", ephemeral: true);
+                    return;
+                }
+                var gameOverButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
+                    .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
+                    .WithButton("Play again", "btnAgain", ButtonStyle.Success).Build();
+
+                var newGameButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
+                    .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
+
+                await DeferAsync();
+                var embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result;
+                if (embed.Item2 != Result.NOTHING)
+                    await FollowupAsync(embed: embed.Item1,
+                        components: gameOverButtons);
+                else
+                    await FollowupAsync(embed: embed.Item1,
+                        components: newGameButtons);
             }
         }
 

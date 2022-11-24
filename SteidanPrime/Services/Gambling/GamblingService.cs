@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using SteidanPrime.Services.Gambling.Blackjack;
 using Game = SteidanPrime.Services.Gambling.Blackjack.Game;
 
 namespace SteidanPrime.Services.Gambling
@@ -47,7 +45,7 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = hitEmbed.Item1;
-                            if (hitEmbed.Item2) x.Components = gameOverButtons;
+                            if (hitEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
                         });
                         break;
                     case "btnStand":
@@ -55,7 +53,7 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = standEmbed.Item1;
-                            if (standEmbed.Item2) x.Components = gameOverButtons;
+                            if (standEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
                         });
                         break;
                     case "btnForfeit":
@@ -72,42 +70,37 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = playAgainEmbed.Item1;
-                            x.Components = newGameButtons;
+                            x.Components = playAgainEmbed.Item2 != Result.NOTHING ? gameOverButtons : newGameButtons;
                         });
                         break;
                 }
             }
         }
 
-        public async Task<(Embed, bool)> NewBlackjackGame(ulong userId, double bet)
+        public async Task<(Embed, Result)> NewBlackjackGame(ulong userId, double bet)
         {
             var player = Players[userId];
             if (player.CurrentlyPlayingBlackjack)
-                return await GetBlackjackGameEmbed(userId);
+                return await BlackjackGameDictionary[player].GetGameEmbed();
             BlackjackGameDictionary[player] = new Game(bet, player);
             player.CurrentlyPlayingBlackjack = true;
-            return await BlackjackGameDictionary[player].GetInitialEmbed();
+            return await BlackjackGameDictionary[player].GetGameEmbed();
         }
 
-        public async Task<(Embed, bool)> ForfeitBlackjackGame(ulong userId)
+        public async Task<(Embed, Result)> ForfeitBlackjackGame(ulong userId)
         {
             var embed = await BlackjackGameDictionary[Players[userId]].StopGameEmbed();
             BlackjackGameDictionary.Remove(Players[userId]);
             return embed;
         }
 
-        public async Task<(Embed, bool)> PlayerHit(ulong userId)
+        public async Task<(Embed, Result)> PlayerHit(ulong userId)
         {
             return await BlackjackGameDictionary[Players[userId]].PlayerHit();
         }
-        private async Task<(Embed, bool)> PlayerStands(ulong userId)
+        private async Task<(Embed, Result)> PlayerStands(ulong userId)
         {
             return await BlackjackGameDictionary[Players[userId]].PlayerStands();
-        }
-
-        public async Task<(Embed, bool)> GetBlackjackGameEmbed(ulong userId)
-        {
-            return await BlackjackGameDictionary[Players[userId]].GetGameEmbed();
         }
 
         public void SerializePlayers()

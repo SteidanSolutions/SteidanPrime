@@ -1,14 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SteidanPrime.Services.Gambling.Blackjack
+﻿namespace SteidanPrime.Services.Gambling.Blackjack
 {
     public enum Result
     {
         PLAYER_BLACKJACK,
         DEALER_BLACKJACK,
-        NOTHING,
-        STAND_OFF
+        PLAYER_BUST,
+        DEALER_BUST,
+        PLAYER_WON,
+        DEALER_WON,
+        PUSH,
+        STAND_OFF,
+        FORFEIT,
+        NOTHING
     }
 }

@@ -1,12 +1,8 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Rest;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SteidanPrime.Services.Gambling.Blackjack
@@ -16,8 +12,14 @@ namespace SteidanPrime.Services.Gambling.Blackjack
         public Player Player { get; set; }
         public Grid Grid { get; set; }
         public RestUserMessage CurrentEmbed { get; set; }
+        public bool PlayerBlackjack { get; set; } = false;
+        public bool DealerBlackjack { get; set; } = false;
+        public bool InitialDrawOver { get; set; } = false;
+        public bool PlayerStood { get; set; } = false;
+        public bool DealerDoneDrawing { get; set; } = false;
         public double Bet { get; set; }
-        
+
+
 
         public Game(double bet, Player player)
         {
@@ -28,307 +30,258 @@ namespace SteidanPrime.Services.Gambling.Blackjack
             CurrentEmbed = null;
         }
 
-        public async Task<(Embed, bool)> GetInitialEmbed()
-        {
-            var result = Grid.CheckIfBlackJack();
-            return result switch
-            {
-                Result.STAND_OFF => await StandOffEmbed(),
-                Result.PLAYER_BLACKJACK => await BlackjackEmbed(result),
-                Result.DEALER_BLACKJACK => await BlackjackEmbed(result),
-                _ => await GetGameEmbed()
-            };
-        }
-
-        public async Task<(Embed, bool)> PlayerHit()
+        public Task<(Embed, Result)> PlayerHit()
         {
             Grid.PlayerCards.Add(Grid.Deck.DrawCard());
-            var tempPlayerCards = Grid.PlayerCards;
-            for (int i = 0; i < tempPlayerCards.Count; i++)
-            {
-                if (tempPlayerCards[i] > 10)
-                    tempPlayerCards[i] = 10;
-            }
-            if (tempPlayerCards.Sum() > 21)
-                return await PlayerBustEmbed();
-            return await GetGameEmbed();
+            return GetGameEmbed();
         }
-
-        public async Task<(Embed, bool)> PlayerStands()
+        public Task<(Embed, Result)> PlayerStands()
         {
             Grid.RevealFaceDownCard = true;
-            if (Grid.DealerCards.Sum() > 17)
+            PlayerStood = true;
+            DrawDealerCards();
+            return GetGameEmbed();
+        }
+        public Result CheckGameResult()
+        {
+            var tempDealerCards = Grid.DealerCards.ToList();
+            var tempPlayerCards = Grid.PlayerCards.ToList();
+
+            tempDealerCards = ConvertFacesToTens(tempDealerCards);
+            tempPlayerCards = ConvertFacesToTens(tempPlayerCards);
+
+            if (CheckIfBust(tempPlayerCards))
+                return Result.PLAYER_BUST;
+            if (CheckIfBust(tempDealerCards))
+                return Result.DEALER_BUST;
+
+            if (!InitialDrawOver)
             {
-                return await CheckDealerCards();
+                PlayerBlackjack = Grid.PlayerCards.Contains(11) &&
+                                  (Grid.PlayerCards.Contains(10) || Grid.PlayerCards.Contains(12) || Grid.PlayerCards.Contains(13) || Grid.PlayerCards.Contains(14));
+                DealerBlackjack = Grid.DealerCards.Contains(11) &&
+                                  (Grid.DealerCards.Contains(10) || Grid.DealerCards.Contains(12) || Grid.DealerCards.Contains(13) || Grid.DealerCards.Contains(14));
+
+                if (PlayerBlackjack && DealerBlackjack)
+                {
+                    Grid.RevealFaceDownCard = true;
+                    return Result.STAND_OFF;
+                }
+                if (PlayerBlackjack)
+                {
+                    Grid.RevealFaceDownCard = true;
+                    return Result.PLAYER_BLACKJACK;
+                }
+                if (DealerBlackjack)
+                {
+                    Grid.RevealFaceDownCard = true;
+                    return Result.DEALER_BLACKJACK;
+                }
+
+                InitialDrawOver = true;
             }
 
-            Grid.DealerCards.Add(Grid.Deck.DrawCard());
-            return await CheckDealerCards();
+
+            if (DealerDoneDrawing && PlayerStood)
+            {
+                Grid.RevealFaceDownCard = true;
+                if (tempDealerCards.Sum() > tempPlayerCards.Sum())
+                    return Result.DEALER_WON;
+                if (tempDealerCards.Sum() < tempPlayerCards.Sum())
+                    return Result.PLAYER_WON;
+                if (tempDealerCards.Sum() == tempPlayerCards.Sum())
+                    return Result.PUSH;
+            }
+
+            return Result.NOTHING;
         }
 
-        public async Task<(Embed, bool)> CheckDealerCards()
+        public bool CheckIfBust(List<int> cards)
         {
-            var tempDealerCards = Grid.DealerCards;
-            var tempPlayerCards = Grid.PlayerCards;
-            for (int i = 0; i < tempDealerCards.Count; i++)
+            cards = ConvertFacesToTens(cards);
+            if (cards.Contains(11) && cards.Sum() > 21)
             {
-                if (tempDealerCards[i] > 10)
-                    tempDealerCards[i] = 10;
+                for (int i = 0; i < cards.Count; i++)
+                {
+                    if (cards[i] != 11) continue;
+                    cards[i] = 1;
+                    CheckIfBust(cards);
+                }
+            }
+            return cards.Sum() > 21;
+        }
+
+        public void DrawDealerCards()
+        {
+            var tempDealerCards = Grid.DealerCards.ToList();
+            tempDealerCards = ConvertFacesToTens(tempDealerCards);
+
+            if (tempDealerCards.Sum() < 17)
+            {
+                Grid.DealerCards.Add(Grid.Deck.DrawCard());
+                DrawDealerCards();
             }
 
-            for (int i = 0; i < tempPlayerCards.Count; i++)
-            {
-                if (tempPlayerCards[i] > 10)
-                    tempPlayerCards[i] = 10;
-            }
-
-            if (tempDealerCards.Sum() <= 17)
+            if (tempDealerCards.Sum() > 21 && tempDealerCards.Contains(11))
             {
                 for (int i = 0; i < tempDealerCards.Count; i++)
                 {
-                    if (tempDealerCards[i] == 1)
-                        tempDealerCards[i] = 11;
+                    if (tempDealerCards[i] == 11)
+                    {
+                        tempDealerCards[i] = 1;
+                    }
                 }
 
-                if (tempDealerCards.Sum() >= 17)
-                    await CheckDealerCards();
-                else
+                if (tempDealerCards.Sum() < 17)
                 {
                     Grid.DealerCards.Add(Grid.Deck.DrawCard());
-                    await CheckDealerCards();
+                    DrawDealerCards();
                 }
             }
-            if (tempDealerCards.Sum() > 21)
-                return await DealerBustEmbed();
-            if (tempDealerCards.Sum() == tempPlayerCards.Sum())
-            {
-                return await PushEmbed();
-            }
-            if (tempDealerCards.Sum() > tempPlayerCards.Sum())
-                return await DealerWonEmbed();
-            return await PlayerWonEmbed();
+
+            DealerDoneDrawing = true;
         }
 
-        private async Task<(Embed, bool)> PlayerWonEmbed()
+        private static List<int> ConvertFacesToTens(List<int> cards)
         {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-            var winnings = 2 * Bet;
-
-            embedBuilder = new EmbedBuilder
+            for (int i = 0; i < cards.Count; i++)
             {
-                Title = $"PLAYER WON!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"YOU WON {winnings} VERGIL BUCKS!"
-            };
-
-            Player.BlackjackWins++;
-            Player.CurrentlyPlayingBlackjack = false;
-            Player.VergilBucks += winnings;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        private async Task<(Embed, bool)> DealerWonEmbed()
-        {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"DEALER WON!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"YOU LOST {Bet} VERGIL BUCKS!"
-            };
-
-            Player.BlackjackLosses++;
-            Player.CurrentlyPlayingBlackjack = false;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        private async Task<(Embed, bool)> DealerBustEmbed()
-        {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-            var winnings = 2 * Bet;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"DEALER BUST!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"YOU WON {winnings} VERGIL BUCKS!"
-            };
-
-            Player.BlackjackWins++;
-            Player.CurrentlyPlayingBlackjack = false;
-            Player.VergilBucks += winnings;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        private async Task<(Embed, bool)> PushEmbed()
-        {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"PUSH!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"Your bet of {Bet} has been returned to you."
-            };
-
-            Player.BlackjackPushes++;
-            Player.CurrentlyPlayingBlackjack = false;
-            Player.VergilBucks += Bet;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        public async Task<(Embed, bool)> PlayerBustEmbed()
-        {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"PLAYER BUST!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"YOU LOST {Bet} VERGIL BUCKS!"
-            };
-
-            Player.BlackjackLosses++;
-            Player.CurrentlyPlayingBlackjack = false;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        private async Task<(Embed, bool)> StandOffEmbed()
-        {
-            Grid.RevealFaceDownCard = true;
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"STAND-OFF!",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = $"Your bet of {Bet} has been returned to you."
-            };
-
-            Player.BlackjackStandOffs++;
-            Player.CurrentlyPlayingBlackjack = false;
-            Player.VergilBucks += Bet;
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
-        }
-
-        public async Task<(Embed, bool)> BlackjackEmbed(Result result)
-        {
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            if (result == Result.PLAYER_BLACKJACK)
-            {
-                var winnings = 2.5 * Bet;
-                embedBuilder = new EmbedBuilder
+                switch (cards[i])
                 {
-                    Title = "PLAYER HAS THE BLACKJACK!",
-                    Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-                };
-                Player.Blackjacks++;
-                Player.BlackjackWins++;
-                Player.VergilBucks += winnings;
-                embedFooterBuilder = new EmbedFooterBuilder
-                {
-                    Text = $"YOU WON {winnings} VERGIL BUCKS!"
-                };
+                    case 12:
+                    case 13:
+                    case 14:
+                        cards[i] = 10;
+                        break;
+                }
+
             }
+
+            return cards;
+        }
+
+        public async Task<(Embed, Result)> GetGameEmbed()
+        {
+            var tempDealerCards = Grid.DealerCards.ToList();
+            var tempPlayerCards = Grid.PlayerCards.ToList();
+
+            tempDealerCards = ConvertFacesToTens(tempDealerCards);
+            tempPlayerCards = ConvertFacesToTens(tempPlayerCards);
+
+            var i = 0;
+            while (tempPlayerCards.Sum() > 21 && tempPlayerCards.Contains(11) && (i < tempPlayerCards.Count))
+            {
+                if (tempPlayerCards[i] == 11)
+                    tempPlayerCards[i] = 1;
+                i++;
+            }
+
+            var embedBuilder = new EmbedBuilder();
+            if (DealerDoneDrawing)
+                embedBuilder.Description = $"``          DEALER: {tempDealerCards.Sum()}          ``\n" 
+                                           + Grid +
+                                           $"``          PLAYER: {tempPlayerCards.Sum()}          ``";
             else
+                embedBuilder.Description = $"``            DEALER            ``\n" 
+                                           + Grid +
+                                           $"``          PLAYER: {tempPlayerCards.Sum()}          ``";
+
+            var embedFooterBuilder = new EmbedFooterBuilder();
+            var result = CheckGameResult();
+
+            switch (result)
             {
-                embedBuilder = new EmbedBuilder
-                {
-                    Title = "DEALER HAS THE BLACKJACK!",
-                    Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-                };
-                Player.BlackjackLosses++;
-                embedFooterBuilder = new EmbedFooterBuilder
-                {
-                    Text = $"YOU LOST {Bet} VERGIL BUCKS!"
-                };
+                case Result.PLAYER_WON:
+                    Player.BlackjackWins++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    Player.VergilBucks += (2 * Bet);
+                    embedBuilder.Title = "PLAYER WON!";
+                    embedFooterBuilder.Text = $"YOU WON {2 * Bet} VERGIL BUCKS!";
+                    break;
+                case Result.DEALER_WON:
+                    Player.BlackjackLosses++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    embedBuilder.Title = "DEALER WON!";
+                    embedFooterBuilder.Text = $"YOU LOST {Bet} VERGIL BUCKS!";
+                    break;
+                case Result.DEALER_BUST:
+                    Player.BlackjackWins++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    Player.VergilBucks += (2 * Bet);
+                    embedBuilder.Title = "DEALER BUST!";
+                    embedFooterBuilder.Text = $"YOU WON {2 * Bet} VERGIL BUCKS!";
+                    break;
+                case Result.PLAYER_BUST:
+                    Player.BlackjackLosses++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    embedBuilder.Title = "PLAYER BUST!";
+                    embedFooterBuilder.Text = $"YOU LOST {Bet} VERGIL BUCKS!";
+                    break;
+                case Result.PUSH:
+                    Player.BlackjackPushes++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    Player.VergilBucks += Bet;
+                    embedBuilder.Title = "PUSH!";
+                    embedFooterBuilder.Text = $"Your bet of {Bet} has been returned to you.";
+                    break;
+                case Result.PLAYER_BLACKJACK:
+                    Player.Blackjacks++;
+                    Player.BlackjackWins++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    Player.VergilBucks += (2.5 * Bet);
+                    embedBuilder.Title = "PLAYER HAS THE BLACKJACK!";
+                    embedFooterBuilder.Text = $"YOU WON {2.5 * Bet} VERGIL BUCKS!";
+                    break;
+                case Result.DEALER_BLACKJACK:
+                    Player.BlackjackLosses++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    embedBuilder.Title = "DEALER HAS THE BLACKJACK!";
+                    embedFooterBuilder.Text = $"YOU LOST {Bet} VERGIL BUCKS!";
+                    break;
+                case Result.STAND_OFF:
+                    Player.BlackjackStandOffs++;
+                    Player.CurrentlyPlayingBlackjack = false;
+                    Grid.RevealFaceDownCard = true;
+                    Player.VergilBucks += Bet;
+                    embedBuilder.Title = "STAND-OFF!";
+                    embedFooterBuilder.Text = $"Your bet of {Bet} has been returned to you.";
+                    break;
+                case Result.NOTHING:
+                    embedBuilder.Title = $"Bet: {Bet} VBucks";
+                    embedFooterBuilder.Text = "Use buttons below to play.";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
-            Player.CurrentlyPlayingBlackjack = false;
+            embedFooterBuilder.Text += $"\nYour balance: {Player.VergilBucks}";
             embedBuilder.Footer = embedFooterBuilder;
             var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
+            return await Task.FromResult((embed, result));
         }
 
-        public async Task<(Embed, bool)> GetGameEmbed()
-        {
-            EmbedBuilder embedBuilder;
-            EmbedFooterBuilder embedFooterBuilder;
-
-            embedBuilder = new EmbedBuilder
-            {
-                Title = $"Bet:  {Bet} VBucks",
-                Description = "``            DEALER            ``\n" + Grid + "``            PLAYER            ``"
-            };
-            embedFooterBuilder = new EmbedFooterBuilder
-            {
-                Text = "Use buttons below to play."
-            };
-
-            embedBuilder.Footer = embedFooterBuilder;
-            var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, false));
-        }
-
-        public async Task<(Embed, bool)> StopGameEmbed()
+        public async Task<(Embed, Result)> StopGameEmbed()
         {
             var embedBuilder = new EmbedBuilder
             {
-                Title = $"LOSER",
+                Title = $"YOU FORFEIT",
                 Description = Grid.ToString()
             };
             var embedFooterBuilder = new EmbedFooterBuilder
             {
-                Text = "YOU GAVE UP LMAO"
+                Text = $"YOU LOST {Bet} VERGIL BUCKS!"
             };
 
             embedBuilder.Footer = embedFooterBuilder;
             var embed = embedBuilder.Build();
-            return await Task.FromResult((embed, true));
+            return await Task.FromResult((embed, Result.FORFEIT));
         }
 
     }

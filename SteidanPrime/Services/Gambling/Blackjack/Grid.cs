@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace SteidanPrime.Services.Gambling.Blackjack
 {
@@ -10,8 +9,6 @@ namespace SteidanPrime.Services.Gambling.Blackjack
         public Tile[,] CurrentGrid { get; set; }
         public List<int> PlayerCards { get; set; } = new List<int>();
         public List<int> DealerCards { get; set; } = new List<int>();
-        public bool PlayerBlackjack { get; set; } = false;
-        public bool DealerBlackjack { get; set; } = false;
         public bool RevealFaceDownCard { get; set; } = false;
         public Deck Deck { get; set; } = new Deck();
         public Grid(int width = 11, int height = 5)
@@ -25,28 +22,6 @@ namespace SteidanPrime.Services.Gambling.Blackjack
             PlayerCards.Add(Deck.DrawCard());
             DealerCards.Add(Deck.DrawCard());
             UpdateGrid();
-        }
-
-        public Result CheckIfBlackJack()
-        {
-            PlayerBlackjack = PlayerCards.Contains(1) &&
-                                  (PlayerCards.Contains(10) || PlayerCards.Contains(12) || PlayerCards.Contains(13) || PlayerCards.Contains(14));
-            DealerBlackjack = DealerCards.Contains(1) &&
-                                   (DealerCards.Contains(10) || DealerCards.Contains(12) || DealerCards.Contains(13) || DealerCards.Contains(14));
-
-            if (PlayerBlackjack && DealerBlackjack)
-                return Result.STAND_OFF;
-            if (PlayerBlackjack)
-            {
-                RevealFaceDownCard = true;
-                return Result.PLAYER_BLACKJACK;
-            }
-            if (DealerBlackjack)
-            {
-                RevealFaceDownCard = true;
-                return Result.DEALER_BLACKJACK;
-            }
-            return Result.NOTHING;
         }
 
         public void UpdateGrid()
