@@ -34,6 +34,11 @@ namespace SteidanPrime.Services.Gambling
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
                     .WithButton("Play again", "btnAgain", ButtonStyle.Success).Build();
 
+                var gameOverButtonsNoMoney = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
+                    .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
+                    .WithButton("Play again", "btnAgain", ButtonStyle.Success, disabled: true).Build();
+
                 var newGameButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
@@ -45,7 +50,8 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = hitEmbed.Item1;
-                            if (hitEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
+                            if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
+                            else if (hitEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
                         });
                         break;
                     case "btnStand":
@@ -53,7 +59,8 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = standEmbed.Item1;
-                            if (standEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
+                            if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
+                            else if (standEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
                         });
                         break;
                     case "btnForfeit":
@@ -62,7 +69,7 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = ForfeitBlackjackGame(component.User.Id).Result.Item1;
-                            x.Components = gameOverButtons;
+                            x.Components = player.VergilBucks < BlackjackGameDictionary[player].Bet ? gameOverButtonsNoMoney : gameOverButtons;
                         });
                         break;
                     case "btnAgain":
@@ -70,6 +77,7 @@ namespace SteidanPrime.Services.Gambling
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = playAgainEmbed.Item1;
+                            if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
                             x.Components = playAgainEmbed.Item2 != Result.NOTHING ? gameOverButtons : newGameButtons;
                         });
                         break;
@@ -90,7 +98,7 @@ namespace SteidanPrime.Services.Gambling
         public async Task<(Embed, Result)> ForfeitBlackjackGame(ulong userId)
         {
             var embed = await BlackjackGameDictionary[Players[userId]].StopGameEmbed();
-            BlackjackGameDictionary.Remove(Players[userId]);
+            Players[userId].CurrentlyPlayingBlackjack = false;
             return embed;
         }
 

@@ -269,14 +269,35 @@ namespace SteidanPrime.Services.Gambling.Blackjack
 
         public async Task<(Embed, Result)> StopGameEmbed()
         {
-            var embedBuilder = new EmbedBuilder
+            var tempDealerCards = Grid.DealerCards.ToList();
+            var tempPlayerCards = Grid.PlayerCards.ToList();
+
+            tempDealerCards = ConvertFacesToTens(tempDealerCards);
+            tempPlayerCards = ConvertFacesToTens(tempPlayerCards);
+
+            var i = 0;
+            while (tempPlayerCards.Sum() > 21 && tempPlayerCards.Contains(11) && (i < tempPlayerCards.Count))
             {
-                Title = $"YOU FORFEIT",
-                Description = Grid.ToString()
-            };
+                if (tempPlayerCards[i] == 11)
+                    tempPlayerCards[i] = 1;
+                i++;
+            }
+
+            var embedBuilder = new EmbedBuilder();
+            if (DealerDoneDrawing)
+                embedBuilder.Description = $"``          DEALER: {tempDealerCards.Sum()}          ``\n"
+                                           + Grid +
+                                           $"``          PLAYER: {tempPlayerCards.Sum()}          ``";
+            else
+                embedBuilder.Description = $"``            DEALER            ``\n"
+                                           + Grid +
+                                           $"``          PLAYER: {tempPlayerCards.Sum()}          ``";
+
+            embedBuilder.Title = $"YOU FORFEIT";
+
             var embedFooterBuilder = new EmbedFooterBuilder
             {
-                Text = $"YOU LOST {Bet} VERGIL BUCKS!"
+                Text = $"YOU LOST {Bet} VERGIL BUCKS!\nYour balance: {Player.VergilBucks}"
             };
 
             embedBuilder.Footer = embedFooterBuilder;
