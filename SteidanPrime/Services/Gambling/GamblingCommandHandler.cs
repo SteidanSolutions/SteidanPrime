@@ -94,11 +94,13 @@ namespace SteidanPrime.Services.Gambling
                 }
                 var gameOverButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary, disabled: true)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
                     .WithButton("Play again", "btnAgain", ButtonStyle.Success).Build();
 
                 var newGameButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
 
                 await DeferAsync();

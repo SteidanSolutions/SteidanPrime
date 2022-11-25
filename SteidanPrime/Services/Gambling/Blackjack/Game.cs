@@ -15,6 +15,8 @@ namespace SteidanPrime.Services.Gambling.Blackjack
         public bool PlayerBlackjack { get; set; } = false;
         public bool DealerBlackjack { get; set; } = false;
         public bool InitialDrawOver { get; set; } = false;
+        public bool PlayerHasHit { get; set; } = false;
+        public bool PlayerHasDoubledDown { get; set; } = false;
         public bool PlayerStood { get; set; } = false;
         public bool DealerDoneDrawing { get; set; } = false;
         public double Bet { get; set; }
@@ -32,6 +34,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
 
         public Task<(Embed, Result)> PlayerHit()
         {
+            PlayerHasHit = true;
             Grid.PlayerCards.Add(Grid.Deck.DrawCard());
             return GetGameEmbed();
         }
@@ -42,6 +45,16 @@ namespace SteidanPrime.Services.Gambling.Blackjack
             DrawDealerCards();
             return GetGameEmbed();
         }
+
+        public Task<(Embed, Result)> PlayerDoubledDown()
+        {
+            PlayerHasDoubledDown = true;
+            Player.VergilBucks -= Bet;
+            Bet *= 2;
+            Grid.PlayerCards.Add(Grid.Deck.DrawCard());
+            return PlayerStands();
+        }
+
         public Result CheckGameResult()
         {
             var tempDealerCards = Grid.DealerCards.ToList();
@@ -261,6 +274,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
                     throw new ArgumentOutOfRangeException();
             }
 
+            if (PlayerHasDoubledDown) Bet /= 2;
             embedFooterBuilder.Text += $"\nYour balance: {Player.VergilBucks}";
             embedBuilder.Footer = embedFooterBuilder;
             var embed = embedBuilder.Build();

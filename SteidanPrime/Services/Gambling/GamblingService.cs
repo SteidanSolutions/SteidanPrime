@@ -31,16 +31,24 @@ namespace SteidanPrime.Services.Gambling
                 var player = Players[component.User.Id];
                 var gameOverButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary, disabled: true)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
                     .WithButton("Play again", "btnAgain", ButtonStyle.Success).Build();
 
                 var gameOverButtonsNoMoney = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary, disabled: true)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger, disabled: true)
                     .WithButton("Play again", "btnAgain", ButtonStyle.Success, disabled: true).Build();
 
                 var newGameButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary)
+                    .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
+
+                var playerHasHitButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success)
+                    .WithButton("Stand", "btnStand", ButtonStyle.Primary)
+                    .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary, disabled: true)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
 
                 switch (component.Data.CustomId)
@@ -52,6 +60,7 @@ namespace SteidanPrime.Services.Gambling
                             x.Embed = hitEmbed.Item1;
                             if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
                             else if (hitEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
+                            else x.Components = playerHasHitButtons;
                         });
                         break;
                     case "btnStand":
@@ -72,13 +81,24 @@ namespace SteidanPrime.Services.Gambling
                             x.Components = player.VergilBucks < BlackjackGameDictionary[player].Bet ? gameOverButtonsNoMoney : gameOverButtons;
                         });
                         break;
+                    case "btnDoubleDown":
+                        var doubleDownEmbed = await PlayerDoubledDown(component.User.Id);
+                        await component.UpdateAsync(x =>
+                        {
+                            x.Embed = doubleDownEmbed.Item1;
+                            if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
+                            else if (doubleDownEmbed.Item2 != Result.NOTHING) x.Components = gameOverButtons;
+                        });
+                        break;
                     case "btnAgain":
                         var playAgainEmbed = await NewBlackjackGame(component.User.Id, BlackjackGameDictionary[Players[component.User.Id]].Bet);
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = playAgainEmbed.Item1;
                             if (player.VergilBucks < BlackjackGameDictionary[player].Bet) x.Components = gameOverButtonsNoMoney;
-                            x.Components = playAgainEmbed.Item2 != Result.NOTHING ? gameOverButtons : newGameButtons;
+                            else if (player.VergilBucks < BlackjackGameDictionary[player].Bet * 2) x.Components =
+                            playerHasHitButtons;
+                            else x.Components = playAgainEmbed.Item2 != Result.NOTHING ? gameOverButtons : newGameButtons;
                         });
                         break;
                 }
@@ -109,6 +129,11 @@ namespace SteidanPrime.Services.Gambling
         private async Task<(Embed, Result)> PlayerStands(ulong userId)
         {
             return await BlackjackGameDictionary[Players[userId]].PlayerStands();
+        }
+
+        public async Task<(Embed, Result)> PlayerDoubledDown(ulong userId)
+        {
+            return await BlackjackGameDictionary[Players[userId]].PlayerDoubledDown();
         }
 
         public void SerializePlayers()
