@@ -19,6 +19,7 @@ namespace SteidanPrime.Services.Gambling
         {
             client.ButtonExecuted += GamblingButtonHandler;
             DeserializePlayers();
+            DeserializeBlackjackDictionary();
         }
 
         private async Task GamblingButtonHandler(SocketMessageComponent component)
@@ -141,6 +142,11 @@ namespace SteidanPrime.Services.Gambling
             File.WriteAllText("Resources/wallet.json", JsonConvert.SerializeObject(Players));
         }
 
+        public void SerializeBlackjackDictionary()
+        {
+            File.WriteAllText("Resources/blackjackDictionary.json", JsonConvert.SerializeObject(BlackjackGameDictionary));
+        }
+
         public void DeserializePlayers()
         {
             if (File.Exists("Resources/wallet.json"))
@@ -150,6 +156,13 @@ namespace SteidanPrime.Services.Gambling
                 Players = new Dictionary<ulong, Player>();
         }
 
-
+        public void DeserializeBlackjackDictionary()
+        {
+            if (File.Exists("Resources/blackjackDictionary.json"))
+                BlackjackGameDictionary = JsonConvert.DeserializeObject<Dictionary<Player, Game>>(
+                    File.ReadAllText("Resources/blackjackDictionary.json"));
+            else
+                BlackjackGameDictionary = new Dictionary<Player, Game>();
+        }
     }
 }

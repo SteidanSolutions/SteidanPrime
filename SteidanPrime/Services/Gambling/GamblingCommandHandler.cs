@@ -77,7 +77,6 @@ namespace SteidanPrime.Services.Gambling
         [SlashCommand("blackjack", "Begins a new or resumes the previous game of blackjack.")]
         public async Task Blackjack([MinValue(0)] double bet)
         {
-            var player = _gamblingService.Players[Context.User.Id];
 
             if (!_gamblingService.Players.ContainsKey(Context.User.Id))
             {
@@ -86,6 +85,7 @@ namespace SteidanPrime.Services.Gambling
             }
             else
             {
+                var player = _gamblingService.Players[Context.User.Id];
                 if (bet > player.VergilBucks)
                 {
                     await RespondAsync(
@@ -103,13 +103,12 @@ namespace SteidanPrime.Services.Gambling
                     .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary)
                     .WithButton("Forfeit", "btnForfeit", ButtonStyle.Danger).Build();
 
-                await DeferAsync();
                 var embed = _gamblingService.NewBlackjackGame(Context.User.Id, bet).Result;
                 if (embed.Item2 != Result.NOTHING)
-                    await FollowupAsync(embed: embed.Item1,
+                    await RespondAsync(embed: embed.Item1,
                         components: gameOverButtons);
                 else
-                    await FollowupAsync(embed: embed.Item1,
+                    await RespondAsync(embed: embed.Item1,
                         components: newGameButtons);
             }
         }

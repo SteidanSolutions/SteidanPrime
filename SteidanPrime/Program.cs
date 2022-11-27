@@ -86,6 +86,7 @@ namespace SteidanPrime
             _services.GetRequiredService<MarkovService>().FixMissingDictionaries();
             _services.GetRequiredService<SokobanService>();
             _services.GetRequiredService<GamblingService>().DeserializePlayers();
+            _services.GetRequiredService<GamblingService>().DeserializeBlackjackDictionary();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
 
@@ -102,6 +103,7 @@ namespace SteidanPrime
             _services.GetRequiredService<MarkovService>().SerializeDict();
             _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
             _services.GetRequiredService<GamblingService>().SerializePlayers();
+            _services.GetRequiredService<GamblingService>().SerializeBlackjackDictionary();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains");
             Console.WriteLine("Dictionaries auto-saved.");
