@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
 
 namespace SteidanPrime.Services.Sokoban
 {
-    [Group("Sokoban")]
-    public class SokobanCommandHandler : ModuleBase<SocketCommandContext>
+    [Group("sokoban", "sokoban game")]
+    public class SokobanCommandHandler : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly SokobanService _sokobanService;
 
@@ -13,41 +14,23 @@ namespace SteidanPrime.Services.Sokoban
             _sokobanService = sokobanService;
         }
 
-        [Remarks("Starts a game of Sokoban in a text channel using embeds. Follow instructions in the message to play. Bot should probably have ``Manage Messages`` permission so it can delete messages used to play the game and prevent the spam.")]
-        [Summary("Starts the Sokoban game in an embed message.")]
-        [Command("play")]
+        [SlashCommand("play", "play gaem")]
         public async Task StartGame()
         {
-            await _sokobanService.NewGameAsync(Context);
-            await Context.Message.DeleteAsync();
+            (Embed, bool) embed = await _sokobanService.NewGameAsync(Context.User.Id);
+            await RespondAsync(embed:embed.Item1,
+                components: new ComponentBuilder().WithButton("          ", "btnEmptyL", ButtonStyle.Secondary, disabled:true)
+                    .WithButton(null, "btnUp", ButtonStyle.Secondary, Emoji.Parse(":arrow_up:"))
+                    .WithButton("          ", "btnEmptyR", ButtonStyle.Secondary, disabled: true)
+                    .WithButton("Reset", "btnReset", ButtonStyle.Primary)
+                    .WithButton("Stop", "btnStop", ButtonStyle.Danger)
+                    .WithButton(null, "btnLeft", ButtonStyle.Secondary, Emoji.Parse(":arrow_left:"), row: 1)
+                    .WithButton(null, "btnDown", ButtonStyle.Secondary, Emoji.Parse(":arrow_down:"), row: 1)
+                    .WithButton(null, "btnRight", ButtonStyle.Secondary, Emoji.Parse(":arrow_right:"), row: 1)
+                    .WithButton("Next level", "btnNextLevel", ButtonStyle.Success, disabled:true, row: 1).Build());
+            //await _sokobanService.NewGameAsync(Context);
         }
 
-        [Remarks("Use to end the current game of Sokoban.")]
-        [Summary("End the current Sokoban game.")]
-        [Command("stop")]
-        public async Task StopGame()
-        {
-            if (_sokobanService.SokobanGameDictionary.ContainsKey(Context.Guild.Id))
-            {
-                _sokobanService.StopGame(Context);
-                await Context.Channel.SendMessageAsync("Sokoban game stopped.");
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync("No game currently running.");
-            }
 
-            await Context.Message.DeleteAsync();
-        }
-
-        [Remarks("Use after you finish a level of Sokoban to continue to the next one.")]
-        [Summary("Continue the current Sokoban and start the next level.")]
-        [Command("continue")]
-        public async Task ContinueGame()
-        {
-            await _sokobanService.ContinueGame(Context);
-            await Context.Message.DeleteAsync();
-        }
-        
     }
 }

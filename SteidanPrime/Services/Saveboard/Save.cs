@@ -2,13 +2,14 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Color = Discord.Color;
 
 namespace SteidanPrime.Services.Saveboard
 {
-    public class Save : ModuleBase<SocketCommandContext>
+    public class Save : InteractionModuleBase<SocketInteractionContext>
     {
+        public InteractionService Commands { get; set; }
         private readonly SaveboardService _saveboardService;
 
         public Save(SaveboardService saveboardService)
@@ -18,15 +19,12 @@ namespace SteidanPrime.Services.Saveboard
 
         [RequireUserPermission(GuildPermission.ManageMessages, Group = "Permissions")]
         [RequireOwner(Group = "Permissions")]
-        [Remarks("Since the number of pinned messages per channel is limited, you can use this command to save any message you want to a channel designated using ``!savehere``. Use either message ID or message link with the command. Requires ``Manage Messages`` permission to use.")]
-        [Summary("Saves a message to the designated channel.")]
-        [Command("save")]
-        public async Task SaveMessage([Summary("<message id> | <message link>")] string message)
+        [SlashCommand("save", "Use this command to save any message you want. Use either message ID or message link")]
+        public async Task SaveMessage(string message)
         {
             if (!_saveboardService.SaveChannels.ContainsKey(Context.Guild.Id))
             {
-                await Context.Channel.SendMessageAsync(
-                    "Saveboard channel not set. Use ``!savehere`` to set the channel.");
+                await RespondAsync("Saveboard channel not set. Use ``!savehere`` to set the channel.");
                 return;
             }
 
@@ -40,7 +38,7 @@ namespace SteidanPrime.Services.Saveboard
                 }
                 catch
                 {
-                    await Context.Channel.SendMessageAsync($"{Context.Message.Author.Mention} the message link you provided is incorrect.");
+                    await RespondAsync($"The message link you provided is incorrect.");
                     return;
                 }
             else
@@ -51,17 +49,18 @@ namespace SteidanPrime.Services.Saveboard
                 }
                 catch
                 {
-                    await Context.Channel.SendMessageAsync($"{Context.Message.Author.Mention} the message Id you provided is incorrect.");
+                    await RespondAsync($"The message Id you provided is incorrect.");
                     return;
                 }
 
             if (msg == null)
             {
-                await Context.Channel.SendMessageAsync($"{Context.Message.Author.Mention} there were issues saving the message. Please try again.");
+                await RespondAsync($"There were issues saving the message. Please try again.");
                 return;
             }
 
-
+            var saveChannelId = _saveboardService.SaveChannels[Context.Guild.Id];
+            await RespondAsync($"Message successfully saved in <#{saveChannelId}>");
 
             var embedBuilder = new EmbedBuilder()
                 .WithAuthor(author =>
@@ -70,7 +69,7 @@ namespace SteidanPrime.Services.Saveboard
                     author.Name = msg.Author.Username;
                 })
                 .WithFooter(footer =>
-                    footer.Text = $"Saved by {Context.Message.Author}"
+                    footer.Text = $"Saved by {Context.Interaction.User}"
                 )
                 .WithTimestamp(msg.Timestamp)
                 .WithDescription($"→ [original message]({msg.GetJumpUrl()}) in <#{msg.Channel.Id}>\n\n{msg.Content}\n\n")
@@ -87,19 +86,17 @@ namespace SteidanPrime.Services.Saveboard
             }
 
             var embed = embedBuilder.Build();
-            await Context.Guild.GetTextChannel(_saveboardService.SaveChannels[Context.Guild.Id])
+            await Context.Guild.GetTextChannel(saveChannelId)
                 .SendMessageAsync(null, false, embed);
         }
 
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permissions")]
         [RequireOwner(Group = "Permissions")]
-        [Remarks("Use to designate the channel which the bot will use to save messages. You should probably have a dedicated channel for it and let only the bot send messages there. Requires ``Administrator`` permission to use.")]
-        [Summary("Designate the channel this message is typed in to be used as the saveboard.")]
-        [Command("savehere")]
+        [SlashCommand("savehere", "Use to designate the channel which the bot will use to save messages.")]
         public async Task SaveHere()
         {
             _saveboardService.SaveChannels[Context.Guild.Id] = Context.Channel.Id;
-            await Context.Channel.SendMessageAsync($"Saveboard will now save messages in <#{Context.Channel.Id}>");
+            await RespondAsync($"Saveboard will now save messages in <#{Context.Channel.Id}>");
         }
     }
 }

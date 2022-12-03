@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.Rest;
 
 namespace SteidanPrime.Services.Sokoban
@@ -22,37 +21,44 @@ namespace SteidanPrime.Services.Sokoban
             CurrentEmbed = null;
         }
 
-        public async Task SendGameEmbed(SocketCommandContext context)
+        public Task<Embed> StopGameEmbed()
         {
             var embedBuilder = new EmbedBuilder
             {
-                Title = $"Level {Level}",
+                Title = $"LOSER",
                 Description = Grid.ToString()
             };
-
             var embedFooterBuilder = new EmbedFooterBuilder
             {
-                Text = "Type W, A, S or D to move or R to reset."
+                Text = "YOU GAVE UP LMAO"
             };
 
             embedBuilder.Footer = embedFooterBuilder;
             var embed = embedBuilder.Build();
-
-            if (CurrentEmbed == null)
-                CurrentEmbed = await context.Channel.SendMessageAsync(null, false, embed);
-            else
-                await CurrentEmbed.ModifyAsync(x =>
-                {
-                    x.Content = "";
-                    x.Embed = new EmbedBuilder()
-                        .WithTitle($"Level {Level}")
-                        .WithDescription(Grid.ToString())
-                        .WithFooter(embedFooterBuilder)
-                        .Build();
-                });
+            return Task.FromResult(embed);
         }
 
-        public async Task ContinueGame(SocketCommandContext context)
+        public Task<(Embed, bool)> GetGameEmbed()
+        {
+            EmbedBuilder embedBuilder;
+            EmbedFooterBuilder embedFooterBuilder;
+
+            embedBuilder = new EmbedBuilder
+            { 
+                Title = $"Level {Level}",
+                Description = Grid.ToString()
+            };
+            embedFooterBuilder = new EmbedFooterBuilder
+            {
+                Text = "Use buttons below to play."
+            };
+
+            embedBuilder.Footer = embedFooterBuilder;
+            var embed = embedBuilder.Build();
+            return Task.FromResult((embed, Grid.HasWon()));
+        }
+
+        public async Task<(Embed, bool)> ContinueGame()
         {
             Level += 1;
 
@@ -64,91 +70,36 @@ namespace SteidanPrime.Services.Sokoban
 
             Grid = new Grid(Width, Height, Level);
             CurrentEmbed = null;
-            await SendGameEmbed(context);
+            return await GetGameEmbed();
         }
 
-        public async Task SendWinEmbed(SocketCommandContext context)
+        public async Task<(Embed, bool)> MovePlayerAsync(Movement direction)
         {
-            var prefix = Program.Settings.CommandPrefix;
-            var embedBuilder = new EmbedBuilder
+            if (Grid.HasWon()) return await GetGameEmbed();
+            switch (direction)
             {
-                Title = "You win!",
-                Description = $"Type ``{prefix}sokoban continue`` to continue to level {Level}" +
-                              $" or ``{prefix}sokoban stop`` to quit."
-            };
-            var embed = embedBuilder.Build();
-            await context.Channel.SendMessageAsync(null, false, embed);
-        }
-
-        public async Task MovePlayerAsync(SocketCommandContext context, Movement direction)
-        {
-            if (!Grid.HasWon())
-            {
-                switch (direction)
-                {
-                    case Movement.UP:
-                        Grid.Player.MoveUp();
-                        break;
-
-                    case Movement.RIGHT:
-                        Grid.Player.MoveRight();
-                        break;
-
-                    case Movement.DOWN:
-                        Grid.Player.MoveDown();
-                        break;
-
-                    case Movement.LEFT:
-                        Grid.Player.MoveLeft();
-                        break;
-
-                    case Movement.RESET:
-                        Grid.Reset();
-                        break;
-                }
-
-                if (!Grid.HasWon())
-                    await SendGameEmbed(context);
-            }
-
-            if (Grid.HasWon())
-            {
-                await SendWinEmbed(context);
-            }
-        }
-
-        public async Task ParseInput(SocketCommandContext context)
-        {
-            var moved = true;
-
-            switch (context.Message.Content.Trim().ToLower())
-            {
-                case "w":
-                    await MovePlayerAsync(context, Movement.UP);
+                case Movement.UP:
+                    Grid.Player.MoveUp();
                     break;
 
-                case "d":
-                    await MovePlayerAsync(context, Movement.RIGHT);
+                case Movement.RIGHT:
+                    Grid.Player.MoveRight();
                     break;
 
-                case "s":
-                    await MovePlayerAsync(context, Movement.DOWN);
+                case Movement.DOWN:
+                    Grid.Player.MoveDown();
                     break;
 
-                case "a":
-                    await MovePlayerAsync(context, Movement.LEFT);
+                case Movement.LEFT:
+                    Grid.Player.MoveLeft();
                     break;
 
-                case "r":
-                    await MovePlayerAsync(context, Movement.RESET);
-                    break;
-                default:
-                    moved = false;
+                case Movement.RESET:
+                    Grid.Reset();
                     break;
             }
 
-            if (moved)
-                await context.Message.DeleteAsync();
+            return await GetGameEmbed();
         }
     }
 }
