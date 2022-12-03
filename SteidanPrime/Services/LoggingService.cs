@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -9,8 +10,10 @@ namespace SteidanPrime.Services
 {
     public class LoggingService
     {
+        private readonly DiscordSocketClient _client;
         public LoggingService(DiscordSocketClient client, InteractionService commands)
         {
+            _client = client;
             client.Log += LogAsync;
             commands.Log += LogAsync;
         }
@@ -28,6 +31,8 @@ namespace SteidanPrime.Services
                 _ => Console.ForegroundColor
             };
 
+            //using StreamWriter file = new("log.txt", append: true);
+            //file.WriteLineAsync($"{DateTime.Now,-19} [{message.Severity}] {message.Source}: {message.Message} {message.Exception}");
             Console.WriteLine($"{DateTime.Now,-19} [{message.Severity}] {message.Source}: {message.Message} {message.Exception}");
             Console.ResetColor();
             return Task.CompletedTask;

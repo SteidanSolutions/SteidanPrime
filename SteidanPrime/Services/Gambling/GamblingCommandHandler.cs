@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using SteidanPrime.Services.Gambling.Blackjack;
 
 namespace SteidanPrime.Services.Gambling
@@ -123,6 +124,39 @@ namespace SteidanPrime.Services.Gambling
                                $"Blackjack Losses: {player.BlackjackLosses}\n" +
                                $"Blackjack Stand-offs: {player.BlackjackStandOffs}\n" +
                                $"Blackjack Pushes: {player.BlackjackPushes}```");
+        }
+
+        [SlashCommand("transfer", "Transfer your own VBucks to someone else.")]
+        public async Task Transfer(SocketUser user, [MinValue(0)] double amount)
+        {
+            if (!_gamblingService.Players.ContainsKey(Context.User.Id))
+                await RespondAsync("You do not currently have an account with the Devil May Bank and cannot transfer any funds.", ephemeral: true);
+            else if (!_gamblingService.Players.ContainsKey(user.Id))
+                await RespondAsync($"{user.Username} does not currently have an account with the Devil May Bank and you cannot transfer funds to them.", ephemeral: true);
+            else if (amount > _gamblingService.Players[Context.User.Id].VergilBucks)
+                await RespondAsync("You do not have enough funds to complete this transaction.", ephemeral: true);
+            else
+            {
+                _gamblingService.Players[Context.User.Id].VergilBucks -= amount;
+                _gamblingService.Players[user.Id].VergilBucks += amount;
+                await RespondAsync(
+                    $"You have successfully transferred ``{amount}`` Vergil Bucks to {user.Username}. Thank you for using Devil May Bank.");
+            }
+        }
+
+        [SlashCommand("loan", "Time yourself out and receive VBucks depending on the length.")]
+        public async Task Loan([MinValue(0)] double minutes)
+        {
+            if (!_gamblingService.Players.ContainsKey(Context.User.Id))
+                await RespondAsync("You don't have a bank account open yet! Type ``/gambling register`` to open one.", ephemeral: true);
+            else
+            {
+                var user = Context.Guild.GetUser(Context.User.Id);
+                await user.SetTimeOutAsync(TimeSpan.FromMinutes(minutes));
+                _gamblingService.Players[Context.User.Id].VergilBucks += (minutes * 5);
+                await RespondAsync(
+                    $"You have successfully taken a loan for ``{minutes * 5}`` Vergil Bucks and have been timed out for ``{minutes}`` minutes.");
+            }
         }
     }
 }

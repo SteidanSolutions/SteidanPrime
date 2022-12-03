@@ -43,6 +43,9 @@ namespace SteidanPrime.Services.Markov
                     await new SocketCommandContext(_client, message).Message.AddReactionAsync(
                         Emote.Parse("<:Madge:788536698098810881>"));
 
+                if (message.Content.StartsWith("/chain") || message.Content.StartsWith("!chain"))
+                    await message.Channel.SendMessageAsync("https://tenor.com/view/devil-may-cry-dante-angry-gif-13322659");
+
                 var msg = message.ToString().Trim().ToLower();
 
                 msg = Regex.Replace(msg,

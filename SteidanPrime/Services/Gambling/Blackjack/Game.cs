@@ -189,8 +189,16 @@ namespace SteidanPrime.Services.Gambling.Blackjack
                 i++;
             }
 
+            i = 0;
+            while (tempDealerCards.Sum() > 21 && tempDealerCards.Contains(11) && (i < tempDealerCards.Count))
+            {
+                if (tempDealerCards[i] == 11)
+                    tempDealerCards[i] = 1;
+                i++;
+            }
+
             var embedBuilder = new EmbedBuilder();
-            if (DealerDoneDrawing)
+            if (Grid.RevealFaceDownCard)
                 embedBuilder.Description = $"``          DEALER: {tempDealerCards.Sum()}          ``\n" 
                                            + Grid +
                                            $"``          PLAYER: {tempPlayerCards.Sum()}          ``";
@@ -298,7 +306,7 @@ namespace SteidanPrime.Services.Gambling.Blackjack
             }
 
             var embedBuilder = new EmbedBuilder();
-            if (DealerDoneDrawing)
+            if (Grid.RevealFaceDownCard)
                 embedBuilder.Description = $"``          DEALER: {tempDealerCards.Sum()}          ``\n"
                                            + Grid +
                                            $"``          PLAYER: {tempPlayerCards.Sum()}          ``";

@@ -12,6 +12,7 @@ using SteidanPrime.Services.Gambling;
 using SteidanPrime.Services.Markov;
 using SteidanPrime.Services.Saveboard;
 using SteidanPrime.Services.Sokoban;
+using SteidanPrime.Services.Admin;
 
 namespace SteidanPrime
 {
@@ -36,15 +37,18 @@ namespace SteidanPrime
                 LogLevel = LogSeverity.Debug,
                 GatewayIntents = Discord.GatewayIntents.All,
                 AlwaysDownloadUsers = true,
-                LogGatewayIntentWarnings = false
+                LogGatewayIntentWarnings = false,
+                HandlerTimeout = 10000
             });
 
             _services = new ServiceCollection()
                 .AddSingleton(_client)
+                .AddSingleton<LoggingService>()
                 .AddSingleton<MarkovService>()
                 .AddSingleton<SaveboardService>()
                 .AddSingleton<SokobanService>()
                 .AddSingleton<GamblingService>()
+                .AddSingleton<AdminService>()
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
                 .AddSingleton<InteractionHandler>()
                 .BuildServiceProvider();
@@ -86,7 +90,6 @@ namespace SteidanPrime
             _services.GetRequiredService<MarkovService>().FixMissingDictionaries();
             _services.GetRequiredService<SokobanService>();
             _services.GetRequiredService<GamblingService>().DeserializePlayers();
-            _services.GetRequiredService<GamblingService>().DeserializeBlackjackDictionary();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains | !help");
 
@@ -96,6 +99,9 @@ namespace SteidanPrime
             //await _commands.RegisterCommandsToGuildAsync(149871097452429312, true);
             //await _commands.RegisterCommandsToGuildAsync(102375147515699200, true);
             //await _commands.RegisterCommandsToGuildAsync(1035712010836516925, true);
+
+            _client.Log += LogAsync;
+            _commands.Log += LogAsync;
         }
 
         private async void AutoSave(object source, ElapsedEventArgs e)
@@ -103,7 +109,6 @@ namespace SteidanPrime
             _services.GetRequiredService<MarkovService>().SerializeDict();
             _services.GetRequiredService<SaveboardService>().SerializeSaveboard();
             _services.GetRequiredService<GamblingService>().SerializePlayers();
-            _services.GetRequiredService<GamblingService>().SerializeBlackjackDictionary();
             await _client.SetGameAsync(
                 $"with {_services.GetRequiredService<MarkovService>().GetTotalWords()} words for Markov chains");
             Console.WriteLine("Dictionaries auto-saved.");
@@ -114,6 +119,7 @@ namespace SteidanPrime
             _commands = _services.GetRequiredService<InteractionService>();
             Settings = JsonConvert.DeserializeObject<Settings>(await File.ReadAllTextAsync("Resources/config.json"));
             LoggingService = new LoggingService(_client, _commands);
+            
 
             try
             {
@@ -168,6 +174,21 @@ namespace SteidanPrime
         private static async Task<string> GetInputAsync()
         {
             return await Task.Run(Console.ReadLine);
-        }      
+        }
+
+        private async Task LogAsync(LogMessage message)
+        {
+            switch (message.Severity)
+            {
+                case LogSeverity.Critical:
+                case LogSeverity.Error:
+                case LogSeverity.Warning:
+                case LogSeverity.Info:
+                    await _client.GetGuild(1035712010836516925)
+                        .GetTextChannel(1047962360251416596)
+                        .SendMessageAsync($"{DateTime.Now,-19} [{message.Severity}] {message.Source}: {message.Message} {message.Exception}");
+                    break;
+            }
+        }
     }
 }
