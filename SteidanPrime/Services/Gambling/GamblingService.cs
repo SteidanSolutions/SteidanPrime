@@ -4,14 +4,15 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
-using SteidanPrime.Services.Gambling.Blackjack;
-using Game = SteidanPrime.Services.Gambling.Blackjack.Game;
+using SteidanPrime.Commands.Gambling.Blackjack;
+using SteidanPrime.Models.Gambling;
+using Game = SteidanPrime.Commands.Gambling.Blackjack.Game;
 
 namespace SteidanPrime.Services.Gambling
 {
-    public class GamblingService
+    public class GamblingService : IGamblingService
     {
-        public Dictionary<ulong, Player> Players { get; set; }
+        private Dictionary<ulong, Player> _players { get; set; }
         public Dictionary<Player, Game> BlackjackGameDictionary { get; set; } = new Dictionary<Player, Game>();
 
 
@@ -21,6 +22,11 @@ namespace SteidanPrime.Services.Gambling
             DeserializePlayers();
         }
 
+        public Dictionary<ulong, Player> GetPlayers()
+        {
+            return _players;
+        }
+        
         private async Task GamblingButtonHandler(SocketMessageComponent component)
         {
             if (component.User.Id != component.Message.Interaction.User.Id)
@@ -28,7 +34,7 @@ namespace SteidanPrime.Services.Gambling
 
             if (!component.HasResponded)
             {
-                var player = Players[component.User.Id];
+                var player = _players[component.User.Id];
                 var gameOverButtons = new ComponentBuilder().WithButton("Hit", "btnHit", ButtonStyle.Success, disabled: true)
                     .WithButton("Stand", "btnStand", ButtonStyle.Primary, disabled: true)
                     .WithButton("Double Down", "btnDoubleDown", ButtonStyle.Secondary, disabled: true)
@@ -91,7 +97,7 @@ namespace SteidanPrime.Services.Gambling
                         });
                         break;
                     case "btnAgain":
-                        var playAgainEmbed = await NewBlackjackGame(component.User.Id, BlackjackGameDictionary[Players[component.User.Id]].Bet);
+                        var playAgainEmbed = await NewBlackjackGame(component.User.Id, BlackjackGameDictionary[_players[component.User.Id]].Bet);
                         await component.UpdateAsync(x =>
                         {
                             x.Embed = playAgainEmbed.Item1;
@@ -107,7 +113,7 @@ namespace SteidanPrime.Services.Gambling
 
         public async Task<(Embed, Result)> NewBlackjackGame(ulong userId, double bet)
         {
-            var player = Players[userId];
+            var player = _players[userId];
             if (player.CurrentlyPlayingBlackjack)
                 if (BlackjackGameDictionary.ContainsKey(player))
                     return await BlackjackGameDictionary[player].GetGameEmbed();
@@ -118,37 +124,38 @@ namespace SteidanPrime.Services.Gambling
 
         public async Task<(Embed, Result)> ForfeitBlackjackGame(ulong userId)
         {
-            var embed = await BlackjackGameDictionary[Players[userId]].StopGameEmbed();
-            Players[userId].CurrentlyPlayingBlackjack = false;
+            var embed = await BlackjackGameDictionary[_players[userId]].StopGameEmbed();
+            _players[userId].CurrentlyPlayingBlackjack = false;
             return embed;
         }
 
         public async Task<(Embed, Result)> PlayerHit(ulong userId)
         {
-            return await BlackjackGameDictionary[Players[userId]].PlayerHit();
+            return await BlackjackGameDictionary[_players[userId]].PlayerHit();
         }
         private async Task<(Embed, Result)> PlayerStands(ulong userId)
         {
-            return await BlackjackGameDictionary[Players[userId]].PlayerStands();
+            return await BlackjackGameDictionary[_players[userId]].PlayerStands();
         }
 
         public async Task<(Embed, Result)> PlayerDoubledDown(ulong userId)
         {
-            return await BlackjackGameDictionary[Players[userId]].PlayerDoubledDown();
+            return await BlackjackGameDictionary[_players[userId]].PlayerDoubledDown();
         }
 
         public void SerializePlayers()
         {
-            File.WriteAllText("Resources/wallet.json", JsonConvert.SerializeObject(Players));
+            File.WriteAllText("Resources/wallet.json", JsonConvert.SerializeObject(_players));
         }
 
         public void DeserializePlayers()
         {
+            //TODO change Newtonsoft.Json to System.Text.Json
             if (File.Exists("Resources/wallet.json"))
-                Players = JsonConvert.DeserializeObject<Dictionary<ulong, Player>>(
+                _players = JsonConvert.DeserializeObject<Dictionary<ulong, Player>>(
                     File.ReadAllText("Resources/wallet.json"));
             else
-                Players = new Dictionary<ulong, Player>();
+                _players = new Dictionary<ulong, Player>();
         }
     }
 }

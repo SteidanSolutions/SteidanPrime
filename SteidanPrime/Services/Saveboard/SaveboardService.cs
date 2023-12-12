@@ -1,31 +1,36 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
+using SteidanPrime.Repositories.Saveboard;
 
 namespace SteidanPrime.Services.Saveboard
 {
-    public class SaveboardService
+    public class SaveboardService : ISaveboardService
     {
-        public Dictionary<ulong, ulong> SaveChannels { get; set; }
-
-        public SaveboardService()
+        private readonly ISaveboardRepository _saveboardRepository;
+        
+        public SaveboardService(ISaveboardRepository saveboardRepository)
         {
+            _saveboardRepository = saveboardRepository;
             DeserializeSaveboard();
         }
-
+        
         public void SerializeSaveboard()
         {
-            File.WriteAllText("Resources/saveboard.json", JsonConvert.SerializeObject(SaveChannels));
+            var saveChannels = _saveboardRepository.GetSaveChannels();
+            File.WriteAllText("Resources/saveboard.json", JsonSerializer.Serialize(saveChannels));
         }
 
         public void DeserializeSaveboard()
         {
+
             if (File.Exists("Resources/saveboard.json"))
-                SaveChannels =
-                    JsonConvert.DeserializeObject<Dictionary<ulong, ulong>>(
-                        File.ReadAllText("Resources/saveboard.json"));
-            else
-                SaveChannels = new Dictionary<ulong, ulong>();
+            {
+                var saveChannels = JsonSerializer.Deserialize<Dictionary<ulong, ulong>>(
+                    File.ReadAllText("Resources/saveboard.json"));
+
+                _saveboardRepository.UpdateSaveChannels(saveChannels);
+            }
         }
     }
 }
