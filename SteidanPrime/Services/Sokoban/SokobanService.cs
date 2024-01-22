@@ -3,10 +3,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using SteidanPrime.Models.Sokoban;
+using Game = SteidanPrime.Commands.Sokoban.Game;
 
 namespace SteidanPrime.Services.Sokoban
 {
-    public class SokobanService
+    public class SokobanService : ISokobanService
     {
         public Dictionary<ulong, Game> SokobanGameDictionary = new Dictionary<ulong, Game>();
 

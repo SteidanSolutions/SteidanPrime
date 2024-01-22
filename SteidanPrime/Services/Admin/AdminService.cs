@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SteidanPrime.Services.Admin
 {
-    public class AdminService
+    public class AdminService : IAdminService
     {
         private readonly DiscordSocketClient _client;
         public AdminService(DiscordSocketClient client)

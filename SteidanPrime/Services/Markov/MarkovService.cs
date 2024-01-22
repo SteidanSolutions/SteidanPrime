@@ -12,10 +12,10 @@ using SteidanPrime.Services.Sokoban;
 
 namespace SteidanPrime.Services.Markov
 {
-    public class MarkovService
+    public class MarkovService : IMarkovService
     {
         private readonly DiscordSocketClient _client;
-        public Dictionary<ulong, Dictionary<string, List<string>>> MarkovDict { get; set; }
+        private Dictionary<ulong, Dictionary<string, List<string>>> MarkovDict { get; set; }
 
         public MarkovService(DiscordSocketClient client)
         {
@@ -24,6 +24,11 @@ namespace SteidanPrime.Services.Markov
             _client.JoinedGuild += JoinedGuild;
             _client.MessageReceived += HandleTextAsync;
             DeserializeDict();
+        }
+
+        public Dictionary<ulong, Dictionary<string, List<string>>> GetMarkovDict()
+        {
+            return MarkovDict;
         }
 
         private Task HandleTextAsync(SocketMessage messageParam)
@@ -143,6 +148,7 @@ namespace SteidanPrime.Services.Markov
         {
             foreach (var guild in _client.Guilds)
             {
+                //TODO change Newtonsoft.Json to System.Text.Json
                 var markovJson = JsonConvert.SerializeObject(MarkovDict[guild.Id], Formatting.Indented);
                 File.WriteAllText("Resources/Dictionaries/" + guild.Id.ToString() + ".json", markovJson);
             }
